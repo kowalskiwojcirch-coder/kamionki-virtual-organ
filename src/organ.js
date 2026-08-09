@@ -4,14 +4,60 @@ export class Organ {
 
         this.audioContext = new AudioContext();
 
+        // MASTER
         this.master =
             this.audioContext.createGain();
 
-        this.master.gain.value = 0.2;
+        this.master.gain.value = 0.8;
 
         this.master.connect(
             this.audioContext.destination
         );
+
+
+        // REJESTRY
+
+        this.registers = {
+
+            geigenprincipal8: {
+                name: "Geigenprincipal 8'",
+                enabled: true,
+                samples: {}
+            },
+
+            salicional8: {
+                name: "Salicional 8'",
+                enabled: false,
+                samples: {}
+            },
+
+            gedeckt8: {
+                name: "Gedeckt 8'",
+                enabled: false,
+                samples: {}
+            },
+
+            flauttraverso4: {
+                name: "Flaut traverso 4'",
+                enabled: false,
+                samples: {}
+            },
+
+            waldflote2: {
+                name: "Waldflöte 2'",
+                enabled: false,
+                samples: {}
+            },
+
+            subbass16: {
+                name: "Subbass 16'",
+                enabled: false,
+                samples: {}
+            }
+        };
+
+
+        // AKTYWNE DŹWIĘKI
 
         this.activeNotes = new Map();
     }
@@ -24,6 +70,7 @@ export class Organ {
         ) {
 
             await this.audioContext.resume();
+
         }
 
         console.log(
@@ -33,112 +80,86 @@ export class Organ {
     }
 
 
-    noteOn(note, velocity = 127) {
+    enableRegister(name) {
 
-        if (this.activeNotes.has(note)) {
+        if (!this.registers[name]) {
+            console.error(
+                "Nie ma takiego rejestru:",
+                name
+            );
+
             return;
         }
 
-        const frequency =
-            440 *
-            Math.pow(
-                2,
-                (note - 69) / 12
-            );
+        this.registers[name].enabled = true;
 
-
-        const oscillator =
-            this.audioContext.createOscillator();
-
-        const gain =
-            this.audioContext.createGain();
-
-
-        oscillator.type = "sine";
-
-        oscillator.frequency.value =
-            frequency;
-
-
-        const now =
-            this.audioContext.currentTime;
-
-
-        gain.gain.setValueAtTime(
-            0,
-            now
+        console.log(
+            "Włączono:",
+            this.registers[name].name
         );
+    }
 
 
-        gain.gain.linearRampToValueAtTime(
-            0.2,
-            now + 0.05
+    disableRegister(name) {
+
+        if (!this.registers[name]) {
+            return;
+        }
+
+        this.registers[name].enabled = false;
+
+        console.log(
+            "Wyłączono:",
+            this.registers[name].name
         );
+    }
 
 
-        oscillator.connect(gain);
+    toggleRegister(name) {
 
-        gain.connect(this.master);
+        if (!this.registers[name]) {
+            return;
+        }
 
-        oscillator.start(now);
+        this.registers[name].enabled =
+            !this.registers[name].enabled;
 
-
-        this.activeNotes.set(
-            note,
-            {
-                oscillator,
-                gain
-            }
+        console.log(
+            this.registers[name].name,
+            this.registers[name].enabled
+                ? "ON"
+                : "OFF"
         );
+    }
 
+
+    noteOn(note, velocity = 127) {
 
         console.log(
             "NOTE ON:",
             note,
-            "Hz:",
-            frequency
+            velocity
+        );
+
+
+        // Na razie tylko informacja.
+        // Prawdziwe próbki dołożymy za chwilę.
+
+        const enabledRegisters =
+            Object.values(this.registers)
+                .filter(register => register.enabled);
+
+
+        console.log(
+            "Aktywne głosy:",
+            enabledRegisters.map(
+                register => register.name
+            )
         );
     }
 
 
     noteOff(note) {
-
-        const voice =
-            this.activeNotes.get(note);
-
-        if (!voice) {
-            return;
-        }
-
-
-        const now =
-            this.audioContext.currentTime;
-
-
-        voice.gain.gain.cancelScheduledValues(
-            now
-        );
-
-
-        voice.gain.gain.setValueAtTime(
-            voice.gain.gain.value,
-            now
-        );
-
-
-        voice.gain.gain.linearRampToValueAtTime(
-            0,
-            now + 0.1
-        );
-
-
-        voice.oscillator.stop(
-            now + 0.15
-        );
-
-
-        this.activeNotes.delete(note);
-
 
         console.log(
             "NOTE OFF:",

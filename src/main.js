@@ -17,3 +17,33 @@ startButton.addEventListener("click", async () => {
 
     await connectMIDI(organ);
 });
+
+const registerButtons =
+    document.querySelectorAll(
+        "[data-register]"
+    );
+
+
+registerButtons.forEach(button => {
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            const register =
+                button.dataset.register;
+
+            organ.toggleRegister(
+                register
+            );
+
+
+            button.classList.toggle(
+                "active",
+                organ.registers[register].enabled
+            );
+
+        }
+    );
+
+});
