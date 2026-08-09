@@ -5,16 +5,11 @@ export class Organ {
         this.audioContext = new AudioContext();
 
         this.master = this.audioContext.createGain();
-
         this.master.gain.value = 0.8;
 
         this.master.connect(
             this.audioContext.destination
         );
-
-        this.voices = new Map();
-
-        console.log("Organ engine gotowy");
     }
 
     async start() {
@@ -22,27 +17,22 @@ export class Organ {
         if (this.audioContext.state === "suspended") {
             await this.audioContext.resume();
         }
-
     }
 
-    noteOn(note, velocity = 127) {
+    noteOn(note, velocity) {
 
         console.log(
-            "NOTE ON:",
+            "NOTE ON",
             note,
-            "velocity:",
             velocity
         );
-
     }
 
     noteOff(note) {
 
         console.log(
-            "NOTE OFF:",
+            "NOTE OFF",
             note
         );
-
     }
-
 }

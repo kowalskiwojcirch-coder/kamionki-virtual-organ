@@ -3,6 +3,7 @@ import { connectMIDI } from "./midi.js";
 
 const organ = new Organ();
 
-window.organ = organ;
-
 connectMIDI(organ);
+
+document.getElementById("status").textContent =
+    "GOTOWE — silnik organów uruchomiony";

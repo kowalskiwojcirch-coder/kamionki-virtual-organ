@@ -2,9 +2,8 @@ export async function connectMIDI(organ) {
 
     if (!navigator.requestMIDIAccess) {
 
-        console.error(
-            "Ta przeglądarka nie obsługuje Web MIDI."
-        );
+        document.getElementById("status").textContent =
+            "MIDI nie jest obsługiwane w tej przeglądarce.";
 
         return;
     }
@@ -15,61 +14,41 @@ export async function connectMIDI(organ) {
 
     if (inputs.length === 0) {
 
-        console.log(
-            "Nie znaleziono urządzenia MIDI."
-        );
+        document.getElementById("status").textContent =
+            "Brak klawiatury MIDI.";
 
         return;
     }
 
-    console.log("Znalezione urządzenia MIDI:");
+    const input = inputs[0];
 
-    inputs.forEach(input => {
+    document.getElementById("status").textContent =
+        "MIDI GOTOWE: " + input.name;
 
-        console.log(
-            input.name
-        );
+    input.onmidimessage = event => {
 
-        input.onmidimessage = event => {
+        const [status, note, velocity] = event.data;
 
-            const [
-                status,
+        const command = status & 0xf0;
+
+        // Naciśnięcie klawisza
+        if (command === 0x90 && velocity > 0) {
+
+            organ.start();
+
+            organ.noteOn(
                 note,
                 velocity
-            ] = event.data;
+            );
+        }
 
-            const command = status & 0xf0;
+        // Puszczenie klawisza
+        if (
+            command === 0x80 ||
+            (command === 0x90 && velocity === 0)
+        ) {
 
-            // NOTE ON
-            if (
-                command === 0x90 &&
-                velocity > 0
-            ) {
-
-                organ.start();
-
-                organ.noteOn(
-                    note,
-                    velocity
-                );
-
-            }
-
-            // NOTE OFF
-            if (
-                command === 0x80 ||
-                (
-                    command === 0x90 &&
-                    velocity === 0
-                )
-            ) {
-
-                organ.noteOff(note);
-
-            }
-
-        };
-
-    });
-
+            organ.noteOff(note);
+        }
+    };
 }
