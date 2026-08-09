@@ -5,11 +5,13 @@ export class Organ {
         this.audioContext = new AudioContext();
 
         this.master = this.audioContext.createGain();
-        this.master.gain.value = 0.8;
+        this.master.gain.value = 0.25;
 
         this.master.connect(
             this.audioContext.destination
         );
+
+        this.activeNotes = new Map();
     }
 
     async start() {
@@ -19,20 +21,72 @@ export class Organ {
         }
     }
 
-    noteOn(note, velocity) {
+    noteOn(note, velocity = 127) {
 
-        console.log(
-            "NOTE ON",
-            note,
-            velocity
+        if (this.activeNotes.has(note)) {
+            return;
+        }
+
+        const frequency =
+            440 * Math.pow(2, (note - 69) / 12);
+
+        const oscillator =
+            this.audioContext.createOscillator();
+
+        const gain =
+            this.audioContext.createGain();
+
+        oscillator.type = "sawtooth";
+        oscillator.frequency.value = frequency;
+
+        gain.gain.setValueAtTime(
+            0,
+            this.audioContext.currentTime
         );
+
+        gain.gain.linearRampToValueAtTime(
+            0.15,
+            this.audioContext.currentTime + 0.05
+        );
+
+        oscillator.connect(gain);
+        gain.connect(this.master);
+
+        oscillator.start();
+
+        this.activeNotes.set(note, {
+            oscillator,
+            gain
+        });
     }
 
     noteOff(note) {
 
-        console.log(
-            "NOTE OFF",
-            note
+        const voice = this.activeNotes.get(note);
+
+        if (!voice) {
+            return;
+        }
+
+        const now =
+            this.audioContext.currentTime;
+
+        voice.gain.gain.cancelScheduledValues(now);
+
+        voice.gain.gain.setValueAtTime(
+            voice.gain.gain.value,
+            now
         );
+
+        voice.gain.gain.linearRampToValueAtTime(
+            0,
+            now + 0.15
+        );
+
+        voice.oscillator.stop(
+            now + 0.2
+        );
+
+        this.activeNotes.delete(note);
     }
 }
