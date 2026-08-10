@@ -29,23 +29,47 @@ export async function connectMIDI(organ) {
 
 
         console.log(
-            "Znalezione urządzenia MIDI:"
+            "Znalezione urządzenia MIDI:",
+            inputs.length
         );
 
 
         inputs.forEach(input => {
 
-            console.log(input.name);
+            console.log(
+                "MIDI:",
+                input.name
+            );
 
 
             input.onmidimessage =
                 event => {
 
-                    const [
-                        status,
-                        note,
-                        velocity
-                    ] = event.data;
+                    if (
+                        !event.data ||
+                        event.data.length < 3
+                    ) {
+                        return;
+                    }
+
+
+                    const status =
+                        Number(event.data[0]);
+
+                    const note =
+                        Number(event.data[1]);
+
+                    const velocity =
+                        Number(event.data[2]);
+
+
+                    if (
+                        !Number.isFinite(status) ||
+                        !Number.isFinite(note) ||
+                        !Number.isFinite(velocity)
+                    ) {
+                        return;
+                    }
 
 
                     const command =
@@ -63,6 +87,8 @@ export async function connectMIDI(organ) {
                             note,
                             velocity
                         );
+
+                        return;
                     }
 
 
@@ -80,19 +106,22 @@ export async function connectMIDI(organ) {
                             note
                         );
                     }
-
                 };
-
         });
 
 
         document.getElementById("status").textContent =
-            "MIDI GOTOWE: " + inputs[0].name;
+            "MIDI GOTOWE: " +
+            inputs[0].name;
 
 
     } catch (error) {
 
-        console.error(error);
+        console.error(
+            "Błąd MIDI:",
+            error
+        );
+
 
         document.getElementById("status").textContent =
             "Błąd MIDI.";
