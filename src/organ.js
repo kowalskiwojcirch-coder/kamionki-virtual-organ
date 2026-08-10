@@ -4,187 +4,339 @@ export class Organ {
 
         this.audioContext = new AudioContext();
 
-        // =========================
-        // MASTER
-        // =========================
+        // =====================================================
+        // GŁOŚNOŚĆ GŁÓWNA
+        // =====================================================
 
-        this.master =
+        this.master = this.audioContext.createGain();
+
+        // Stała głośność - velocity MIDI NIE wpływa na głośność
+        this.master.gain.value = 0.20;
+
+
+        // =====================================================
+        // DELIKATNA SATURACJA
+        // =====================================================
+
+        this.saturation = this.audioContext.createWaveShaper();
+
+        this.saturation.curve =
+            this.createSaturationCurve(180);
+
+        this.saturation.oversample = "2x";
+
+
+        // =====================================================
+        // POGŁOS KOŚCIELNY
+        // =====================================================
+
+        this.reverb = this.audioContext.createConvolver();
+
+        this.reverb.buffer =
+            this.createChurchImpulse(
+                4.8,
+                2.8
+            );
+
+
+        this.directGain =
             this.audioContext.createGain();
 
-        this.master.gain.setValueAtTime(
-            0.25,
-            this.audioContext.currentTime
-        );
+        this.reverbGain =
+            this.audioContext.createGain();
+
+
+        this.directGain.gain.value = 0.76;
+
+        this.reverbGain.gain.value = 0.24;
+
 
         this.master.connect(
+            this.saturation
+        );
+
+
+        this.saturation.connect(
+            this.directGain
+        );
+
+        this.saturation.connect(
+            this.reverbGain
+        );
+
+
+        this.directGain.connect(
+            this.audioContext.destination
+        );
+
+        this.reverbGain.connect(
+            this.reverb
+        );
+
+        this.reverb.connect(
             this.audioContext.destination
         );
 
 
-        // =========================
+        // =====================================================
         // REJESTRY
-        // =========================
+        // =====================================================
 
         this.registers = {
 
+
+            // -------------------------------------------------
+            // GEIGENPRINCIPAL 8'
+            // -------------------------------------------------
+
             geigenprincipal8: {
+
                 name: "Geigenprincipal 8'",
+
                 enabled: true,
+
                 octave: 1,
-                detune: 0.08,
+
+                attack: 0.035,
+
+                release: 0.38,
+
+                air: 0.008,
+
+                detune: 0.018,
+
+                brightness: 1.0,
 
                 harmonics: [
-                    [1, 1.00],
-                    [2, 0.18],
-                    [3, 0.35],
-                    [4, 0.08],
-                    [5, 0.16],
-                    [6, 0.05],
-                    [7, 0.08],
-                    [8, 0.03]
+
+                    [1, 1.000],
+                    [2, 0.280],
+                    [3, 0.210],
+                    [4, 0.115],
+                    [5, 0.085],
+                    [6, 0.060],
+                    [7, 0.040],
+                    [8, 0.027],
+                    [9, 0.018],
+                    [10, 0.012],
+                    [11, 0.008],
+                    [12, 0.005]
+
                 ]
             },
+
+
+            // -------------------------------------------------
+            // SALICIONAL 8'
+            // -------------------------------------------------
 
             salicional8: {
+
                 name: "Salicional 8'",
+
                 enabled: false,
+
                 octave: 1,
-                detune: 0.22,
+
+                attack: 0.055,
+
+                release: 0.48,
+
+                air: 0.012,
+
+                detune: 0.085,
+
+                brightness: 0.70,
 
                 harmonics: [
-                    [1, 1.00],
-                    [2, 0.10],
-                    [3, 0.20],
-                    [4, 0.05],
-                    [5, 0.08],
-                    [6, 0.03]
+
+                    [1, 1.000],
+                    [2, 0.190],
+                    [3, 0.145],
+                    [4, 0.075],
+                    [5, 0.048],
+                    [6, 0.030],
+                    [7, 0.018],
+                    [8, 0.010]
+
                 ]
             },
+
+
+            // -------------------------------------------------
+            // GEDECKT 8'
+            // -------------------------------------------------
 
             gedeckt8: {
+
                 name: "Gedeckt 8'",
+
                 enabled: false,
+
                 octave: 1,
-                detune: 0.04,
+
+                attack: 0.045,
+
+                release: 0.42,
+
+                air: 0.006,
+
+                detune: 0.012,
+
+                brightness: 0.50,
 
                 harmonics: [
-                    [1, 1.00],
-                    [2, 0.30],
-                    [3, 0.08],
-                    [4, 0.04],
-                    [5, 0.02]
+
+                    [1, 1.000],
+                    [2, 0.350],
+                    [3, 0.115],
+                    [4, 0.055],
+                    [5, 0.022],
+                    [6, 0.010]
+
                 ]
             },
+
+
+            // -------------------------------------------------
+            // FLAUT TRAVERSO 4'
+            // -------------------------------------------------
 
             flauttraverso4: {
+
                 name: "Flaut traverso 4'",
+
                 enabled: false,
+
                 octave: 2,
-                detune: 0.06,
+
+                attack: 0.050,
+
+                release: 0.40,
+
+                air: 0.009,
+
+                detune: 0.020,
+
+                brightness: 0.62,
 
                 harmonics: [
-                    [1, 1.00],
-                    [2, 0.45],
-                    [3, 0.10],
-                    [4, 0.05],
-                    [5, 0.02]
+
+                    [1, 1.000],
+                    [2, 0.400],
+                    [3, 0.130],
+                    [4, 0.052],
+                    [5, 0.021],
+                    [6, 0.010]
+
                 ]
             },
+
+
+            // -------------------------------------------------
+            // WALDFLÖTE 2'
+            // -------------------------------------------------
 
             waldflote2: {
+
                 name: "Waldflöte 2'",
+
                 enabled: false,
+
                 octave: 4,
-                detune: 0.05,
+
+                attack: 0.028,
+
+                release: 0.34,
+
+                air: 0.007,
+
+                detune: 0.018,
+
+                brightness: 0.82,
 
                 harmonics: [
-                    [1, 1.00],
-                    [2, 0.35],
-                    [3, 0.25],
-                    [4, 0.12],
-                    [5, 0.05],
-                    [6, 0.03]
+
+                    [1, 1.000],
+                    [2, 0.430],
+                    [3, 0.240],
+                    [4, 0.115],
+                    [5, 0.060],
+                    [6, 0.032],
+                    [7, 0.017],
+                    [8, 0.009]
+
                 ]
             },
 
+
+            // -------------------------------------------------
+            // SUBBASS 16'
+            // -------------------------------------------------
+
             subbass16: {
+
                 name: "Subbass 16'",
+
                 enabled: false,
+
                 octave: 0.5,
-                detune: 0.02,
+
+                attack: 0.085,
+
+                release: 0.60,
+
+                air: 0.003,
+
+                detune: 0.008,
+
+                brightness: 0.22,
 
                 harmonics: [
-                    [1, 1.00],
-                    [2, 0.35],
-                    [3, 0.08],
-                    [4, 0.03]
+
+                    [1, 1.000],
+                    [2, 0.300],
+                    [3, 0.070],
+                    [4, 0.025],
+                    [5, 0.010]
+
                 ]
             }
+
         };
 
+
+        // =====================================================
+        // AKTYWNE NUTY
+        // =====================================================
 
         this.activeNotes = new Map();
     }
 
 
-    // =========================
-    // BEZPIECZNA LICZBA
-    // =========================
-
-    safeNumber(value, fallback) {
-
-        const number = Number(value);
-
-        if (Number.isFinite(number)) {
-            return number;
-        }
-
-        return fallback;
-    }
-
-
-    // =========================
+    // =========================================================
     // START
-    // =========================
+    // =========================================================
 
     async start() {
 
         if (
             this.audioContext.state !== "running"
         ) {
+
             await this.audioContext.resume();
         }
 
         console.log(
-            "AUDIO:",
+            "Audio:",
             this.audioContext.state
         );
     }
 
 
-    // =========================
+    // =========================================================
     // REJESTRY
-    // =========================
-
-    enableRegister(name) {
-
-        if (!this.registers[name]) {
-            return;
-        }
-
-        this.registers[name].enabled = true;
-    }
-
-
-    disableRegister(name) {
-
-        if (!this.registers[name]) {
-            return;
-        }
-
-        this.registers[name].enabled = false;
-    }
-
+    // =========================================================
 
     toggleRegister(name) {
 
@@ -204,51 +356,45 @@ export class Organ {
     }
 
 
-    // =========================
+    enableRegister(name) {
+
+        if (this.registers[name]) {
+
+            this.registers[name].enabled = true;
+        }
+    }
+
+
+    disableRegister(name) {
+
+        if (this.registers[name]) {
+
+            this.registers[name].enabled = false;
+        }
+    }
+
+
+    // =========================================================
     // NOTE ON
-    // =========================
+    // =========================================================
 
     noteOn(note, velocity = 127) {
 
-        // MIDI musi dać prawidłową liczbę
+        note = Number(note);
 
-        note = this.safeNumber(note, -1);
-
-        velocity = this.safeNumber(
-            velocity,
-            127
-        );
-
-
-        // Jeżeli MIDI wysłało coś złego,
-        // ignorujemy wiadomość.
-
-        if (
-            !Number.isFinite(note) ||
-            note < 0 ||
-            note > 127
-        ) {
-
-            console.warn(
-                "Nieprawidłowy numer MIDI:",
-                note
-            );
-
+        if (!Number.isFinite(note)) {
             return;
         }
 
-
-        velocity =
-            Math.max(
-                0,
-                Math.min(
-                    127,
-                    velocity
-                )
-            );
-
-
         note = Math.round(note);
+
+
+        if (
+            note < 0 ||
+            note > 127
+        ) {
+            return;
+        }
 
 
         if (
@@ -258,14 +404,19 @@ export class Organ {
         }
 
 
+        // =====================================================
+        // WAŻNE:
+        // velocity jest całkowicie ignorowane.
+        // Organ ma stałą głośność.
+        // =====================================================
+
+
         const voices = [];
 
 
         for (
             const register
-            of Object.values(
-                this.registers
-            )
+            of Object.values(this.registers)
         ) {
 
             if (!register.enabled) {
@@ -274,20 +425,24 @@ export class Organ {
 
 
             const voice =
-                this.createRegisterVoice(
+                this.createPipeVoice(
                     note,
-                    velocity,
                     register
                 );
 
 
             if (voice) {
-                voices.push(voice);
+
+                voices.push(
+                    voice
+                );
             }
         }
 
 
-        if (voices.length > 0) {
+        if (
+            voices.length > 0
+        ) {
 
             this.activeNotes.set(
                 note,
@@ -297,89 +452,60 @@ export class Organ {
     }
 
 
-    // =========================
-    // TWORZENIE GŁOSU
-    // =========================
+    // =========================================================
+    // PISZCZAŁKA
+    // =========================================================
 
-    createRegisterVoice(
+    createPipeVoice(
         note,
-        velocity,
         register
     ) {
 
-        // =========================
-        // CZĘSTOTLIWOŚĆ MIDI
-        // =========================
+        // -----------------------------------------------------
+        // MIDI -> Hz
+        // -----------------------------------------------------
 
-        const safeNote =
-            this.safeNumber(
-                note,
-                60
-            );
-
-
-        const frequency =
+        const midiFrequency =
             440 *
             Math.pow(
                 2,
-                (safeNote - 69) / 12
+                (note - 69) / 12
             );
+
+
+        const octave =
+            Number.isFinite(
+                register.octave
+            )
+                ? register.octave
+                : 1;
+
+
+        const frequency =
+            midiFrequency *
+            octave;
 
 
         if (
-            !Number.isFinite(frequency) ||
+            !Number.isFinite(
+                frequency
+            ) ||
             frequency <= 0
         ) {
-
-            console.error(
-                "Błędna częstotliwość:",
-                frequency,
-                "MIDI:",
-                safeNote
-            );
 
             return null;
         }
 
 
-        // =========================
-        // OKTAWA
-        // =========================
-
-        const octave =
-            this.safeNumber(
-                register.octave,
-                1
-            );
-
-
-        // =========================
-        // DETUNE
-        // =========================
-
-        const detune =
-            this.safeNumber(
-                register.detune,
-                0
-            );
-
-
-        // =========================
-        // ENVELOPE
-        // =========================
+        // -----------------------------------------------------
+        // GŁÓWNA OBWIEDNIA
+        // -----------------------------------------------------
 
         const envelope =
             this.audioContext.createGain();
 
 
-        const now =
-            this.audioContext.currentTime;
-
-
-        envelope.gain.setValueAtTime(
-            0,
-            now
-        );
+        envelope.gain.value = 0;
 
 
         envelope.connect(
@@ -390,76 +516,30 @@ export class Organ {
         const oscillators = [];
 
 
-        // =========================
+        // -----------------------------------------------------
         // HARMONICZNE
-        // =========================
+        // -----------------------------------------------------
 
         for (
-            const harmonicData
+            const data
             of register.harmonics
         ) {
 
-            let harmonic =
-                this.safeNumber(
-                    harmonicData[0],
-                    1
-                );
+            const harmonic =
+                Number(data[0]);
 
-
-            let amplitude =
-                this.safeNumber(
-                    harmonicData[1],
-                    0
-                );
-
-
-            // Dodatkowa ochrona
-
-            if (
-                harmonic <= 0
-            ) {
-                harmonic = 1;
-            }
+            const amplitude =
+                Number(data[1]);
 
 
             if (
-                amplitude < 0
+                !Number.isFinite(harmonic) ||
+                !Number.isFinite(amplitude)
             ) {
-                amplitude = 0;
-            }
-
-
-            // =========================
-            // CZĘSTOTLIWOŚĆ
-            // =========================
-
-            let oscillatorFrequency =
-                frequency *
-                harmonic *
-                octave;
-
-
-            // OSTATECZNE SPRAWDZENIE
-
-            if (
-                !Number.isFinite(
-                    oscillatorFrequency
-                ) ||
-                oscillatorFrequency <= 0
-            ) {
-
-                console.warn(
-                    "Pominięto błędną harmoniczną:",
-                    oscillatorFrequency
-                );
 
                 continue;
             }
 
-
-            // =========================
-            // OSCYLATOR
-            // =========================
 
             const oscillator =
                 this.audioContext
@@ -471,67 +551,56 @@ export class Organ {
                     .createGain();
 
 
-            oscillator.type = "sine";
-
-
-            oscillator.frequency.setValueAtTime(
-                oscillatorFrequency,
-                now
-            );
-
-
-            // Losowe minimalne rozstrojenie
-
-            let randomDetune =
-                (
-                    Math.random() - 0.5
-                ) * detune;
+            const actualFrequency =
+                frequency *
+                harmonic;
 
 
             if (
                 !Number.isFinite(
-                    randomDetune
-                )
+                    actualFrequency
+                ) ||
+                actualFrequency <= 0
             ) {
-                randomDetune = 0;
+
+                continue;
             }
+
+
+            oscillator.type =
+                "sine";
+
+
+            oscillator.frequency.setValueAtTime(
+                actualFrequency,
+                this.audioContext.currentTime
+            );
+
+
+            // -------------------------------------------------
+            // Minimalna niestabilność piszczałki
+            // -------------------------------------------------
+
+            const randomDetune =
+                (
+                    Math.random() - 0.5
+                ) *
+                register.detune;
 
 
             oscillator.detune.setValueAtTime(
                 randomDetune,
-                now
+                this.audioContext.currentTime
             );
 
 
-            // =========================
-            // GŁOŚNOŚĆ
-            // =========================
+            // -------------------------------------------------
+            // GŁOŚNOŚĆ HARMONICZNEJ
+            // -------------------------------------------------
 
-            let gainValue =
-                amplitude *
-                (
-                    velocity / 127
-                );
+            harmonicGain.gain.value =
+                amplitude;
 
-
-            if (
-                !Number.isFinite(
-                    gainValue
-                )
-            ) {
-                gainValue = 0;
-            }
-
-
-            harmonicGain.gain.setValueAtTime(
-                gainValue,
-                now
-            );
-
-
-            // =========================
-            // POŁĄCZENIA
-            // =========================
 
             oscillator.connect(
                 harmonicGain
@@ -543,58 +612,301 @@ export class Organ {
             );
 
 
-            oscillator.start(now);
+            oscillator.start();
 
 
-            oscillators.push({
-                oscillator,
-                gain: harmonicGain
-            });
+            oscillators.push(
+                {
+                    oscillator,
+                    gain: harmonicGain
+                }
+            );
         }
 
 
-        // =========================
-        // JEŻELI NIE MA OSCYLATORÓW
-        // =========================
+        // -----------------------------------------------------
+        // SZUM POWIETRZA
+        // -----------------------------------------------------
 
-        if (
-            oscillators.length === 0
-        ) {
-
-            envelope.disconnect();
-
-            return null;
-        }
+        const air =
+            this.createAir(
+                frequency,
+                register.air,
+                envelope
+            );
 
 
-        // =========================
+        // -----------------------------------------------------
+        // LEKKI TRANSIENT
+        // -----------------------------------------------------
+
+        const transient =
+            this.createTransient(
+                frequency,
+                register,
+                envelope
+            );
+
+
+        // -----------------------------------------------------
         // ATAK
-        // =========================
+        // -----------------------------------------------------
+
+        const now =
+            this.audioContext.currentTime;
+
+
+        const attack =
+            Number.isFinite(
+                register.attack
+            )
+                ? register.attack
+                : 0.04;
+
+
+        envelope.gain.setValueAtTime(
+            0,
+            now
+        );
+
 
         envelope.gain.linearRampToValueAtTime(
-            0.7,
-            now + 0.035
+            0.72,
+            now + attack
         );
 
 
         return {
+
+            envelope,
+
             oscillators,
-            envelope
+
+            air,
+
+            transient,
+
+            release:
+                Number.isFinite(
+                    register.release
+                )
+                    ? register.release
+                    : 0.4
         };
     }
 
 
-    // =========================
+    // =========================================================
+    // SZUM POWIETRZA
+    // =========================================================
+
+    createAir(
+        frequency,
+        amount,
+        destination
+    ) {
+
+        if (
+            amount <= 0
+        ) {
+            return null;
+        }
+
+
+        const duration =
+            0.25;
+
+
+        const length =
+            Math.floor(
+                this.audioContext.sampleRate *
+                duration
+            );
+
+
+        const buffer =
+            this.audioContext.createBuffer(
+                1,
+                length,
+                this.audioContext.sampleRate
+            );
+
+
+        const data =
+            buffer.getChannelData(0);
+
+
+        for (
+            let i = 0;
+            i < length;
+            i++
+        ) {
+
+            // Lekko miękki szum
+
+            data[i] =
+                (
+                    Math.random() * 2 - 1
+                ) *
+                0.35;
+        }
+
+
+        const source =
+            this.audioContext
+                .createBufferSource();
+
+
+        source.buffer =
+            buffer;
+
+
+        source.loop = true;
+
+
+        const filter =
+            this.audioContext
+                .createBiquadFilter();
+
+
+        filter.type =
+            "bandpass";
+
+
+        filter.frequency.value =
+            Math.min(
+                5000,
+                Math.max(
+                    250,
+                    frequency * 1.8
+                )
+            );
+
+
+        filter.Q.value =
+            0.8;
+
+
+        const gain =
+            this.audioContext
+                .createGain();
+
+
+        gain.gain.value =
+            amount;
+
+
+        source.connect(
+            filter
+        );
+
+
+        filter.connect(
+            gain
+        );
+
+
+        gain.connect(
+            destination
+        );
+
+
+        source.start();
+
+
+        return {
+            source,
+            gain
+        };
+    }
+
+
+    // =========================================================
+    // TRANSIENT PISZCZAŁKI
+    // =========================================================
+
+    createTransient(
+        frequency,
+        register,
+        destination
+    ) {
+
+        const oscillator =
+            this.audioContext
+                .createOscillator();
+
+
+        const gain =
+            this.audioContext
+                .createGain();
+
+
+        oscillator.type =
+            "triangle";
+
+
+        oscillator.frequency.value =
+            frequency *
+            1.003;
+
+
+        gain.gain.value = 0;
+
+
+        oscillator.connect(
+            gain
+        );
+
+
+        gain.connect(
+            destination
+        );
+
+
+        const now =
+            this.audioContext.currentTime;
+
+
+        gain.gain.setValueAtTime(
+            0,
+            now
+        );
+
+
+        gain.gain.linearRampToValueAtTime(
+            0.025,
+            now + 0.008
+        );
+
+
+        gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            now + 0.10
+        );
+
+
+        oscillator.start(now);
+
+
+        oscillator.stop(
+            now + 0.12
+        );
+
+
+        return {
+            oscillator,
+            gain
+        };
+    }
+
+
+    // =========================================================
     // NOTE OFF
-    // =========================
+    // =========================================================
 
     noteOff(note) {
 
-        note =
-            this.safeNumber(
-                note,
-                -1
-            );
+        note = Number(note);
 
 
         if (
@@ -608,7 +920,9 @@ export class Organ {
 
 
         const voices =
-            this.activeNotes.get(note);
+            this.activeNotes.get(
+                note
+            );
 
 
         if (!voices) {
@@ -625,54 +939,204 @@ export class Organ {
             of voices
         ) {
 
-            if (!voice.envelope) {
+            if (
+                !voice.envelope
+            ) {
                 continue;
             }
 
 
-            const currentGain =
-                this.safeNumber(
-                    voice.envelope.gain.value,
-                    0
+            const release =
+                voice.release;
+
+
+            const current =
+                Math.max(
+                    0,
+                    Number(
+                        voice.envelope
+                            .gain
+                            .value
+                    ) || 0
                 );
 
 
-            voice.envelope.gain.cancelScheduledValues(
-                now
-            );
+            voice.envelope.gain
+                .cancelScheduledValues(
+                    now
+                );
 
 
-            voice.envelope.gain.setValueAtTime(
-                currentGain,
-                now
-            );
+            voice.envelope.gain
+                .setValueAtTime(
+                    current,
+                    now
+                );
 
 
-            voice.envelope.gain.linearRampToValueAtTime(
-                0,
-                now + 0.30
-            );
+            voice.envelope.gain
+                .linearRampToValueAtTime(
+                    0,
+                    now + release
+                );
 
+
+            // -------------------------------------------------
+            // Zatrzymanie harmonicznych
+            // -------------------------------------------------
 
             for (
-                const oscillator
+                const osc
                 of voice.oscillators
             ) {
 
                 try {
 
-                    oscillator.oscillator.stop(
-                        now + 0.35
+                    osc.oscillator.stop(
+                        now +
+                        release +
+                        0.05
                     );
 
                 } catch (error) {
 
-                    // Oscylator już zatrzymany.
+                    // Już zatrzymany.
                 }
+            }
+
+
+            // -------------------------------------------------
+            // Zatrzymanie szumu
+            // -------------------------------------------------
+
+            if (
+                voice.air &&
+                voice.air.source
+            ) {
+
+                try {
+
+                    voice.air.source.stop(
+                        now +
+                        release +
+                        0.05
+                    );
+
+                } catch (error) {}
             }
         }
 
 
-        this.activeNotes.delete(note);
+        this.activeNotes.delete(
+            note
+        );
+    }
+
+
+    // =========================================================
+    // SATURACJA
+    // =========================================================
+
+    createSaturationCurve(amount) {
+
+        const samples = 1024;
+
+        const curve =
+            new Float32Array(
+                samples
+            );
+
+
+        const drive =
+            amount / 100;
+
+
+        for (
+            let i = 0;
+            i < samples;
+            i++
+        ) {
+
+            const x =
+                (i * 2 / samples) - 1;
+
+
+            curve[i] =
+                Math.tanh(
+                    x * (1 + drive)
+                );
+        }
+
+
+        return curve;
+    }
+
+
+    // =========================================================
+    // IMPULS POGŁOSOWY
+    // =========================================================
+
+    createChurchImpulse(
+        seconds,
+        decay
+    ) {
+
+        const length =
+            Math.floor(
+                this.audioContext.sampleRate *
+                seconds
+            );
+
+
+        const impulse =
+            this.audioContext.createBuffer(
+                2,
+                length,
+                this.audioContext.sampleRate
+            );
+
+
+        for (
+            let channel = 0;
+            channel < 2;
+            channel++
+        ) {
+
+            const data =
+                impulse.getChannelData(
+                    channel
+                );
+
+
+            for (
+                let i = 0;
+                i < length;
+                i++
+            ) {
+
+                const position =
+                    i / length;
+
+
+                const envelope =
+                    Math.pow(
+                        1 - position,
+                        decay
+                    );
+
+
+                // Gęsty, nieregularny ogon
+
+                data[i] =
+                    (
+                        Math.random() * 2 - 1
+                    ) *
+                    envelope *
+                    0.75;
+            }
+        }
+
+
+        return impulse;
     }
 }
