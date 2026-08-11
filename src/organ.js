@@ -4,21 +4,25 @@ export class Organ {
 
         this.audioContext = new AudioContext();
 
-
         // =====================================================
         // MASTER
         // =====================================================
 
-        this.master =
-            this.audioContext.createGain();
+        this.master = this.audioContext.createGain();
+        this.master.gain.value = 0.20;
 
-        // Stała głośność.
-        // Velocity MIDI nie wpływa na głośność.
-        this.master.gain.value = 0.18;
+        // Delikatny limiter / kompresor
+        this.compressor =
+            this.audioContext.createDynamicsCompressor();
 
+        this.compressor.threshold.value = -12;
+        this.compressor.knee.value = 10;
+        this.compressor.ratio.value = 3;
+        this.compressor.attack.value = 0.008;
+        this.compressor.release.value = 0.15;
 
         // =====================================================
-        // DELIKATNY REVERB
+        // REVERB
         // =====================================================
 
         this.reverb =
@@ -27,167 +31,131 @@ export class Organ {
         this.reverb.buffer =
             this.createSmallChurchReverb();
 
-
         this.directGain =
             this.audioContext.createGain();
 
         this.reverbGain =
             this.audioContext.createGain();
 
+        this.directGain.gain.value = 0.94;
+        this.reverbGain.gain.value = 0.06;
 
-        // Większość dźwięku bezpośrednio,
-        // tylko mała ilość pogłosu.
-        this.directGain.gain.value = 0.88;
+        this.master.connect(this.compressor);
 
-        this.reverbGain.gain.value = 0.12;
-
-
-        this.master.connect(
-            this.directGain
-        );
-
-        this.master.connect(
-            this.reverbGain
-        );
-
+        this.compressor.connect(this.directGain);
+        this.compressor.connect(this.reverbGain);
 
         this.directGain.connect(
             this.audioContext.destination
         );
 
-        this.reverbGain.connect(
-            this.reverb
-        );
+        this.reverbGain.connect(this.reverb);
 
         this.reverb.connect(
             this.audioContext.destination
         );
 
-
         // =====================================================
-        // PRÓBKI
+        // GŁOSY
+        //
+        // TYLKO GEIGENPRINCIPAL JEST WŁĄCZONY NA START
         // =====================================================
 
         this.samples = {
 
-
             geingenprincipal: {
 
                 name: "Geigenprincipal 8'",
-
-                file:
-                    "./samples/geingenprincipal1.mp3",
+                file: "./samples/geingenprincipal1.mp3",
 
                 enabled: true,
 
-                volume: 0.82,
+                volume: 0.62,
 
                 baseNote: 60,
 
-                loopStart: 0.18,
+                // Na razie bez brutalnego loopa.
+                // Później ustawimy dokładny loop
+                // po analizie próbki.
 
+                loopStart: 0.35,
                 loopEnd: 0.85,
 
-                attack: 0.025,
-
-                release: 0.12
-            },
-
-
-            gedact: {
-
-                name: "Gedact 8'",
-
-                file:
-                    "./samples/gedact1.mp3",
-
-                enabled: false,
-
-                volume: 0.78,
-
-                baseNote: 60,
-
-                loopStart: 0.16,
-
-                loopEnd: 0.82,
-
-                attack: 0.030,
-
-                release: 0.14
+                attack: 0.018,
+                release: 0.18
             },
 
 
             sacional: {
 
-                name: "Sacional 8'",
-
-                file:
-                    "./samples/sacional1.mp3",
+                name: "Salicional 8'",
+                file: "./samples/sacional1.mp3",
 
                 enabled: false,
 
-                volume: 0.75,
+                volume: 0.48,
 
                 baseNote: 60,
 
-                loopStart: 0.20,
+                loopStart: 0.35,
+                loopEnd: 0.85,
 
-                loopEnd: 0.88,
+                attack: 0.025,
+                release: 0.20
+            },
 
-                attack: 0.035,
 
-                release: 0.15
+            gedact: {
+
+                name: "Gedackt 8'",
+                file: "./samples/gedact1.mp3",
+
+                enabled: false,
+
+                volume: 0.50,
+
+                baseNote: 60,
+
+                loopStart: 0.35,
+                loopEnd: 0.85,
+
+                attack: 0.022,
+                release: 0.20
             },
 
 
             flute: {
 
-                name: "Flute",
-
-                file:
-                    "./samples/flute1.mp3",
+                name: "Flaut Traverso 4'",
+                file: "./samples/flute1.mp3",
 
                 enabled: false,
 
-                volume: 0.78,
+                volume: 0.42,
 
                 baseNote: 60,
 
-                loopStart: 0.15,
+                loopStart: 0.35,
+                loopEnd: 0.85,
 
-                loopEnd: 0.82,
-
-                attack: 0.025,
-
-                release: 0.13
+                attack: 0.020,
+                release: 0.18
             }
         };
 
 
         // =====================================================
-        // CACHE PRÓBEK
+        // CACHE
         // =====================================================
 
         this.buffers = {};
-
         this.loading = {};
-
 
         // =====================================================
         // AKTYWNE NUTY
-        //
-        // Map pozwala trzymać wiele nut jednocześnie.
-        //
-        // C4
-        // D4
-        // E4
-        // G4
-        //
-        // wszystko może grać jednocześnie.
         // =====================================================
 
-        this.activeNotes =
-            new Map();
+        this.activeNotes = new Map();
     }
 
 
@@ -200,121 +168,81 @@ export class Organ {
         if (
             this.audioContext.state !== "running"
         ) {
-
             await this.audioContext.resume();
         }
 
+        // ŁADUJEMY WSZYSTKO OD RAZU.
+        // Dzięki temu później MIDI nie czeka
+        // na pobranie/dekodowanie MP3.
 
         await this.loadAllSamples();
 
+        console.log("ORGANY GOTOWE");
+    }
 
-        console.log(
-            "ORGANY GOTOWE"
+
+    // =========================================================
+    // LOAD ALL
+    // =========================================================
+
+    async loadAllSamples() {
+
+        const names =
+            Object.keys(this.samples);
+
+        await Promise.all(
+            names.map(
+                name => this.loadSample(name)
+            )
         );
     }
 
 
     // =========================================================
-    // ŁADOWANIE WSZYSTKICH PRÓBEK
-    // =========================================================
-
-    async loadAllSamples() {
-
-        for (
-            const name
-            of Object.keys(
-                this.samples
-            )
-        ) {
-
-            try {
-
-                await this.loadSample(
-                    name
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Błąd ładowania:",
-                    name,
-                    error
-                );
-            }
-        }
-    }
-
-
-    // =========================================================
-    // ŁADOWANIE JEDNEJ PRÓBKI
+    // LOAD SAMPLE
     // =========================================================
 
     async loadSample(name) {
 
-        if (
-            this.buffers[name]
-        ) {
-
+        if (this.buffers[name]) {
             return this.buffers[name];
         }
 
-
-        if (
-            this.loading[name]
-        ) {
-
+        if (this.loading[name]) {
             return this.loading[name];
         }
-
 
         const sample =
             this.samples[name];
 
-
         this.loading[name] =
             fetch(sample.file)
-
                 .then(response => {
 
-                    if (
-                        !response.ok
-                    ) {
+                    if (!response.ok) {
 
                         throw new Error(
-                            "HTTP " +
-                            response.status
+                            `Nie można pobrać ${sample.file}`
                         );
                     }
 
-
                     return response.arrayBuffer();
                 })
-
-                .then(data => {
-
-                    return this.audioContext
-                        .decodeAudioData(
-                            data
-                        );
-                })
-
+                .then(data =>
+                    this.audioContext.decodeAudioData(data)
+                )
                 .then(buffer => {
 
-                    this.buffers[name] =
-                        buffer;
-
+                    this.buffers[name] = buffer;
 
                     console.log(
-                        "Załadowano:",
-                        sample.name,
-                        buffer.duration.toFixed(2) +
+                        `Załadowano ${sample.name}:`,
+                        buffer.duration.toFixed(3),
                         "s"
                     );
 
-
                     return buffer;
                 });
-
 
         return this.loading[name];
     }
@@ -326,45 +254,31 @@ export class Organ {
 
     enableRegister(name) {
 
-        if (
-            this.samples[name]
-        ) {
-
-            this.samples[name].enabled =
-                true;
+        if (this.samples[name]) {
+            this.samples[name].enabled = true;
         }
     }
 
 
     disableRegister(name) {
 
-        if (
-            this.samples[name]
-        ) {
-
-            this.samples[name].enabled =
-                false;
+        if (this.samples[name]) {
+            this.samples[name].enabled = false;
         }
     }
 
 
     toggleRegister(name) {
 
-        if (
-            !this.samples[name]
-        ) {
-
+        if (!this.samples[name]) {
             return;
         }
-
 
         this.samples[name].enabled =
             !this.samples[name].enabled;
 
-
         console.log(
             this.samples[name].name,
-
             this.samples[name].enabled
                 ? "ON"
                 : "OFF"
@@ -376,90 +290,52 @@ export class Organ {
     // NOTE ON
     // =========================================================
 
-    async noteOn(
-        note,
-        velocity = 127
-    ) {
+    async noteOn(note, velocity = 127) {
 
-        note =
-            Number(note);
-
+        note = Math.round(Number(note));
 
         if (
-            !Number.isFinite(note)
-        ) {
-
-            return;
-        }
-
-
-        note =
-            Math.round(note);
-
-
-        if (
+            !Number.isFinite(note) ||
             note < 0 ||
             note > 127
         ) {
-
             return;
         }
 
-
-        // Jeżeli nuta już gra,
-        // nie twórz drugiej kopii.
         if (
             this.activeNotes.has(note)
         ) {
-
             return;
         }
-
 
         if (
             this.audioContext.state !== "running"
         ) {
-
             await this.audioContext.resume();
         }
 
-
         const voices = [];
 
-
-        // =====================================================
-        // WSZYSTKIE WŁĄCZONE REJESTRY
-        // =====================================================
-
         for (
-            const [
-                name,
-                sample
-            ]
-            of Object.entries(
-                this.samples
-            )
+            const [name, sample]
+            of Object.entries(this.samples)
         ) {
 
-            if (
-                !sample.enabled
-            ) {
-
+            if (!sample.enabled) {
                 continue;
             }
 
+            // UWAGA:
+            // Próbki powinny już być załadowane.
+            // Nie blokujemy rozpoczęcia nuty
+            // pobieraniem MP3.
 
             const buffer =
-                await this.loadSample(
-                    name
-                );
-
+                this.buffers[name];
 
             if (!buffer) {
-
                 continue;
             }
-
 
             const voice =
                 this.createVoice(
@@ -468,19 +344,12 @@ export class Organ {
                     note
                 );
 
-
             if (voice) {
-
-                voices.push(
-                    voice
-                );
+                voices.push(voice);
             }
         }
 
-
-        if (
-            voices.length > 0
-        ) {
+        if (voices.length > 0) {
 
             this.activeNotes.set(
                 note,
@@ -491,7 +360,7 @@ export class Organ {
 
 
     // =========================================================
-    // TWORZENIE GŁOSU
+    // CREATE VOICE
     // =========================================================
 
     createVoice(
@@ -503,15 +372,12 @@ export class Organ {
         const sample =
             this.samples[name];
 
-
         // =====================================================
-        // PRZESTRAJANIE
+        // TRANSPOSYCJA
         // =====================================================
 
         const semitones =
-            midiNote -
-            sample.baseNote;
-
+            midiNote - sample.baseNote;
 
         const playbackRate =
             Math.pow(
@@ -519,103 +385,71 @@ export class Organ {
                 semitones / 12
             );
 
-
-        if (
-            !Number.isFinite(
-                playbackRate
-            )
-        ) {
-
-            return null;
-        }
-
-
         // =====================================================
         // SOURCE
         // =====================================================
 
         const source =
-            this.audioContext
-                .createBufferSource();
+            this.audioContext.createBufferSource();
 
-
-        source.buffer =
-            buffer;
-
+        source.buffer = buffer;
 
         source.playbackRate.value =
             playbackRate;
 
+        // Minimalne różnice między głosami.
+        // Bardzo małe, żeby nie robić fałszu.
 
-        // Bardzo małe rozstrojenie.
         source.detune.value =
-            (
-                Math.random() - 0.5
-            ) * 0.8;
-
+            (Math.random() - 0.5) * 0.25;
 
         // =====================================================
         // GAIN
         // =====================================================
 
         const gain =
-            this.audioContext
-                .createGain();
-
+            this.audioContext.createGain();
 
         gain.gain.value = 0;
 
-
-        // =====================================================
-        // POŁĄCZENIE
-        // =====================================================
-
-        source.connect(
-            gain
-        );
-
-        gain.connect(
-            this.master
-        );
-
+        source.connect(gain);
+        gain.connect(this.master);
 
         // =====================================================
         // LOOP
         // =====================================================
 
         let loopStart =
-            Number(
+            Math.max(
+                0.05,
                 sample.loopStart
             );
 
-
         let loopEnd =
-            Number(
-                sample.loopEnd
+            Math.min(
+                sample.loopEnd,
+                buffer.duration - 0.03
             );
 
+        // Jeżeli próbka jest krótsza niż
+        // zakładane ustawienia.
 
-        // Bezpieczne granice.
+        if (
+            loopEnd <= loopStart + 0.10
+        ) {
 
-        loopStart =
-            Math.max(
-                0.01,
+            loopStart =
                 Math.min(
-                    loopStart,
-                    buffer.duration - 0.08
-                )
-            );
+                    0.20,
+                    buffer.duration * 0.25
+                );
 
-
-        loopEnd =
-            Math.max(
-                loopStart + 0.03,
-                Math.min(
-                    loopEnd,
-                    buffer.duration - 0.02
-                )
-            );
-
+            loopEnd =
+                Math.max(
+                    loopStart + 0.10,
+                    buffer.duration - 0.05
+                );
+        }
 
         source.loop = true;
 
@@ -625,43 +459,38 @@ export class Organ {
         source.loopEnd =
             loopEnd;
 
-
         // =====================================================
-        // ATAK
+        // ATTACK
         // =====================================================
 
         const now =
             this.audioContext.currentTime;
 
+        const targetVolume =
+            sample.volume;
+
+        gain.gain.cancelScheduledValues(now);
 
         gain.gain.setValueAtTime(
             0,
             now
         );
 
-
         gain.gain.linearRampToValueAtTime(
-            sample.volume,
+            targetVolume,
             now + sample.attack
         );
-
 
         // =====================================================
         // START
         // =====================================================
 
-        source.start(
-            now,
-            0
-        );
-
+        source.start(now);
 
         return {
 
             source,
-
             gain,
-
             name,
 
             release:
@@ -678,138 +507,82 @@ export class Organ {
 
     noteOff(note) {
 
-        note =
-            Number(note);
+        note = Math.round(Number(note));
 
-
-        if (
-            !Number.isFinite(note)
-        ) {
-
+        if (!Number.isFinite(note)) {
             return;
         }
-
-
-        note =
-            Math.round(note);
-
 
         const voices =
-            this.activeNotes.get(
-                note
-            );
-
+            this.activeNotes.get(note);
 
         if (!voices) {
-
             return;
         }
-
 
         const now =
             this.audioContext.currentTime;
 
-
-        // =====================================================
-        // KAŻDY GŁOS TEJ NUTY
-        // =====================================================
-
         for (
-            const voice
-            of voices
+            const voice of voices
         ) {
 
-            if (
-                voice.stopped
-            ) {
-
+            if (voice.stopped) {
                 continue;
             }
 
-
             voice.stopped = true;
-
 
             const release =
                 voice.release;
 
-
             const current =
                 Math.max(
                     0,
-                    Number(
-                        voice.gain.gain.value
-                    ) || 0
+                    voice.gain.gain.value
                 );
-
-
-            // =================================================
-            // NATYCHMIAST PRZESTAJE BYĆ PODTRZYMYWANY
-            // =================================================
 
             voice.gain.gain.cancelScheduledValues(
                 now
             );
-
 
             voice.gain.gain.setValueAtTime(
                 current,
                 now
             );
 
-
-            // Bardzo krótki naturalny ogon.
-            voice.gain.gain.linearRampToValueAtTime(
-                0,
+            voice.gain.gain.exponentialRampToValueAtTime(
+                0.0001,
                 now + release
             );
-
-
-            // =================================================
-            // CAŁKOWITE ZATRZYMANIE
-            // =================================================
 
             try {
 
                 voice.source.stop(
-                    now +
-                    release +
-                    0.01
+                    now + release + 0.03
                 );
 
             } catch (error) {}
         }
 
-
-        // =====================================================
-        // USUWAMY TĘ NUTĘ
-        //
-        // Inne nuty nadal pozostają aktywne!
-        // =====================================================
-
-        this.activeNotes.delete(
-            note
-        );
+        this.activeNotes.delete(note);
     }
 
 
     // =========================================================
-    // DELIKATNY REVERB
+    // REVERB
     // =========================================================
 
     createSmallChurchReverb() {
 
         const seconds = 2.2;
-
         const decay = 4.5;
-
 
         const length =
             Math.floor(
                 this.audioContext.sampleRate *
                 seconds
             );
-
 
         const impulse =
             this.audioContext.createBuffer(
@@ -818,7 +591,6 @@ export class Organ {
                 this.audioContext.sampleRate
             );
 
-
         for (
             let channel = 0;
             channel < 2;
@@ -826,10 +598,7 @@ export class Organ {
         ) {
 
             const data =
-                impulse.getChannelData(
-                    channel
-                );
-
+                impulse.getChannelData(channel);
 
             for (
                 let i = 0;
@@ -840,13 +609,11 @@ export class Organ {
                 const position =
                     i / length;
 
-
                 const envelope =
                     Math.pow(
                         1 - position,
                         decay
                     );
-
 
                 data[i] =
                     (
@@ -856,7 +623,6 @@ export class Organ {
                     0.30;
             }
         }
-
 
         return impulse;
     }
