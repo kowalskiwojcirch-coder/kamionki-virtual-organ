@@ -3,50 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Kamionki Virtual Organ</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+
+            background:
+                radial-gradient(
+                    circle at top,
+                    #243447 0%,
+                    #10151b 45%,
+                    #080b0f 100%
+                );
+
+            color: #eee;
+
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 30px;
+        }
+
+        .organ {
+            width: 100%;
+            max-width: 900px;
+
+            background: rgba(15, 19, 24, 0.94);
+
+            border: 1px solid rgba(255,255,255,0.08);
+
+            border-radius: 22px;
+
+            box-shadow:
+                0 30px 80px rgba(0,0,0,0.5),
+                inset 0 1px rgba(255,255,255,0.04);
+
+            overflow: hidden;
+        }
+
+        header {
+            padding: 30px 32px 25px;
+
+            border-bottom:
+                1px solid rgba(255,255,255,0.07);
+        }
+
+        .title {
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .subtitle {
+            margin-top: 6px;
+
+            color: #9da8b5;
+
+            font-size: 14px;
+        }
+
+        .status {
+            margin-top: 20px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            color: #9da8b5;
+
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+
+            border-radius: 50%;
+
+            background: #777;
+
+            box-shadow: 0 0 10px rgba(255,255,255,0.15);
+        }
+
+        .status-dot.ready {
+            background: #70d69b;
+
+            box-shadow:
+                0 0 12px rgba(112,214,155,0.7);
+        }
+
+        .content {
+            padding: 28px 32px 32px;
+        }
+
+        #start-audio {
+            width: 100%;
+
+            padding: 16px 20px;
+
+            border: 0;
+            border-radius: 12px;
+
+            background: #e8c77a;
+
+            color: #17130a;
+
+            font-size: 15px;
+            font-weight: 800;
+
+            cursor: pointer;
+
+            transition:
+                transform 0.15s,
+                filter 0.15s;
+        }
+
+        #start-audio:hover {
+            filter: brightness(1.08);
+        }
+
+        #start-audio:active {
+            transform: scale(0.99);
+        }
+
+        #start-audio:disabled {
+            cursor: default;
+            opacity: 0.6;
+        }
+
+        .section-title {
+            margin-top: 30px;
+            margin-bottom: 14px;
+
+            color: #9da8b5;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+
+            text-transform: uppercase;
+        }
+
+        #registers {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 12px;
+        }
+
+        .register {
+            position: relative;
+
+            min-height: 76px;
+
+            padding: 16px 18px;
+
+            display: grid;
+
+            grid-template-columns:
+                14px 1fr auto;
+
+            align-items: center;
+
+            gap: 12px;
+
+            text-align: left;
+
+            background: #171d24;
+
+            border:
+                1px solid rgba(255,255,255,0.07);
+
+            border-radius: 13px;
+
+            color: #dfe4ea;
+
+            cursor: pointer;
+
+            transition:
+                background 0.15s,
+                border 0.15s,
+                transform 0.15s;
+        }
+
+        .register:hover {
+            background: #1c232c;
+        }
+
+        .register:active {
+            transform: scale(0.985);
+        }
+
+        .register.active {
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(232,199,122,0.15),
+                    rgba(232,199,122,0.05)
+                );
+
+            border-color:
+                rgba(232,199,122,0.45);
+        }
+
+        .lamp {
+            width: 10px;
+            height: 10px;
+
+            border-radius: 50%;
+
+            background: #343b43;
+
+            transition:
+                background 0.15s,
+                box-shadow 0.15s;
+        }
+
+        .register.active .lamp {
+            background: #e8c77a;
+
+            box-shadow:
+                0 0 12px rgba(232,199,122,0.8);
+        }
+
+        .register strong {
+            font-size: 14px;
+        }
+
+        .register small {
+            color: #929daa;
+
+            font-size: 13px;
+        }
+
+        .hint {
+            margin-top: 18px;
+
+            color: #707b87;
+
+            font-size: 12px;
+
+            line-height: 1.6;
+        }
+
+        @media (max-width: 650px) {
+
+            body {
+                padding: 12px;
+            }
+
+            header,
+            .content {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            #registers {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<h1>Kamionki Virtual Organ</h1>
+<div class="organ">
 
-<p id="status">Kliknij przycisk, aby uruchomić organy.</p>
+    <header>
 
-<button id="start-audio">
-    URUCHOM ORGANY
-</button>
+        <div class="title">
+            Kamionki Virtual Organ
+        </div>
 
-<hr>
+        <div class="subtitle">
+            Sample-based virtual organ
+        </div>
 
-<h2>Rejestry</h2>
+        <div class="status">
 
-<div id="registers">
+            <span
+                id="status-dot"
+                class="status-dot"
+            ></span>
 
-    <button data-register="geigenprincipal8">
-        GEIGENPRINCIPAL 8'
-    </button>
+            <span id="status">
+                MIDI nie został uruchomiony.
+            </span>
 
-    <button data-register="salicional8">
-        SALICIONAL 8'
-    </button>
+        </div>
 
-    <button data-register="gedeckt8">
-        GEDECKT 8'
-    </button>
+    </header>
 
-    <button data-register="flauttraverso4">
-        FLAUT TRAVERSO 4'
-    </button>
 
-    <button data-register="waldflote2">
-        WALDFLÖTE 2'
-    </button>
+    <div class="content">
 
-    <button data-register="subbass16">
-        SUBBASS 16'
-    </button>
+        <button id="start-audio">
+            URUCHOM ORGANY
+        </button>
+
+
+        <div class="section-title">
+            Rejestry
+        </div>
+
+
+        <div id="registers">
+
+            <button
+                class="register active"
+                data-voice="geingenprincipal"
+                aria-pressed="true"
+            >
+                <span class="lamp"></span>
+
+                <strong>
+                    Geigenprincipal
+                </strong>
+
+                <small>
+                    8′
+                </small>
+            </button>
+
+
+            <button
+                class="register"
+                data-voice="sacional"
+                aria-pressed="false"
+            >
+                <span class="lamp"></span>
+
+                <strong>
+                    Salicional
+                </strong>
+
+                <small>
+                    8′
+                </small>
+            </button>
+
+
+            <button
+                class="register"
+                data-voice="gedact"
+                aria-pressed="false"
+            >
+                <span class="lamp"></span>
+
+                <strong>
+                    Gedackt
+                </strong>
+
+                <small>
+                    8′
+                </small>
+            </button>
+
+
+            <button
+                class="register"
+                data-voice="flute"
+                aria-pressed="false"
+            >
+                <span class="lamp"></span>
+
+                <strong>
+                    Flaut Traverso
+                </strong>
+
+                <small>
+                    4′
+                </small>
+            </button>
+
+        </div>
+
+
+        <div class="hint">
+            Po uruchomieniu aktywny jest tylko Geigenprincipal.
+            Kolejne rejestry możesz dołączać podczas gry.
+            MIDI powinno działać po uruchomieniu audio.
+        </div>
+
+    </div>
 
 </div>
+
 
 <script type="module" src="./src/main.js"></script>
 
