@@ -1,129 +1,178 @@
-export async function connectMIDI(organ) {
+export class MIDIController {
 
-    if (!navigator.requestMIDIAccess) {
+    constructor(organ) {
 
-        document.getElementById("status").textContent =
-            "Ta przeglądarka nie obsługuje Web MIDI.";
+        this.organ = organ;
 
-        return;
+        this.midiAccess = null;
+
+        this.inputs = new Set();
+
+        this.onStatus = null;
     }
 
 
-    try {
+    async start() {
 
-        const midi =
-            await navigator.requestMIDIAccess();
+        if (!navigator.requestMIDIAccess) {
+
+            this.setStatus(
+                "Ta przeglądarka nie obsługuje Web MIDI."
+            );
+
+            return false;
+        }
+
+
+        try {
+
+            this.midiAccess =
+                await navigator.requestMIDIAccess();
+
+        } catch (error) {
+
+            console.error(
+                "MIDI:",
+                error
+            );
+
+            this.setStatus(
+                "Brak dostępu do MIDI."
+            );
+
+            return false;
+        }
+
+
+        this.connectInputs();
+
+
+        this.midiAccess.onstatechange =
+            () => {
+
+                this.connectInputs();
+            };
+
+
+        return true;
+    }
+
+
+    connectInputs() {
+
+        if (!this.midiAccess) {
+            return;
+        }
+
+
+        for (const input of this.inputs) {
+
+            input.onmidimessage = null;
+        }
+
+        this.inputs.clear();
 
 
         const inputs =
-            [...midi.inputs.values()];
+            Array.from(
+                this.midiAccess.inputs.values()
+            );
+
+
+        for (const input of inputs) {
+
+            input.onmidimessage =
+                event => {
+
+                    this.handleMessage(event);
+                };
+
+            this.inputs.add(input);
+        }
 
 
         if (inputs.length === 0) {
 
-            document.getElementById("status").textContent =
-                "Audio działa, ale nie znaleziono MIDI.";
+            this.setStatus(
+                "Organy gotowe — podłącz MIDI."
+            );
+
+        } else {
+
+            this.setStatus(
+                `MIDI podłączone — ${inputs.length} urządzenie.`
+            );
+        }
+    }
+
+
+    handleMessage(event) {
+
+        const data =
+            event.data;
+
+        if (!data || data.length < 2) {
+            return;
+        }
+
+
+        const command =
+            data[0] & 0xf0;
+
+        const note =
+            data[1];
+
+        const velocity =
+            data[2] || 0;
+
+
+        // NOTE ON
+
+        if (
+            command === 0x90 &&
+            velocity > 0
+        ) {
+
+            this.organ.noteOn(
+                note,
+                velocity
+            );
 
             return;
         }
 
 
-        console.log(
-            "Znalezione urządzenia MIDI:",
-            inputs.length
-        );
+        // NOTE OFF
+
+        if (
+            command === 0x80
+        ) {
+
+            this.organ.noteOff(note);
+
+            return;
+        }
 
 
-        inputs.forEach(input => {
+        // NOTE ON velocity 0 = NOTE OFF
 
-            console.log(
-                "MIDI:",
-                input.name
-            );
+        if (
+            command === 0x90 &&
+            velocity === 0
+        ) {
 
-
-            input.onmidimessage =
-                event => {
-
-                    if (
-                        !event.data ||
-                        event.data.length < 3
-                    ) {
-                        return;
-                    }
+            this.organ.noteOff(note);
+        }
+    }
 
 
-                    const status =
-                        Number(event.data[0]);
+    setStatus(text) {
 
-                    const note =
-                        Number(event.data[1]);
+        if (
+            typeof this.onStatus === "function"
+        ) {
 
-                    const velocity =
-                        Number(event.data[2]);
-
-
-                    if (
-                        !Number.isFinite(status) ||
-                        !Number.isFinite(note) ||
-                        !Number.isFinite(velocity)
-                    ) {
-                        return;
-                    }
-
-
-                    const command =
-                        status & 0xf0;
-
-
-                    // NOTE ON
-
-                    if (
-                        command === 0x90 &&
-                        velocity > 0
-                    ) {
-
-                        organ.noteOn(
-                            note,
-                            velocity
-                        );
-
-                        return;
-                    }
-
-
-                    // NOTE OFF
-
-                    if (
-                        command === 0x80 ||
-                        (
-                            command === 0x90 &&
-                            velocity === 0
-                        )
-                    ) {
-
-                        organ.noteOff(
-                            note
-                        );
-                    }
-                };
-        });
-
-
-        document.getElementById("status").textContent =
-            "MIDI GOTOWE: " +
-            inputs[0].name;
-
-
-    } catch (error) {
-
-        console.error(
-            "Błąd MIDI:",
-            error
-        );
-
-
-        document.getElementById("status").textContent =
-            "Błąd MIDI.";
+            this.onStatus(text);
+        }
     }
 }
