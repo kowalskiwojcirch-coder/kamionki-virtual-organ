@@ -1,109 +1,79 @@
-import { Organ } from "./Organ.js";
-
+import { Organ } from "./organ.js";
 
 // ============================================================
 // ELEMENTY UI
 // ============================================================
 
-const startButton =
-    document.getElementById(
-        "start-audio"
-    );
-
-
-const status =
-    document.getElementById(
-        "status"
-    );
-
-
-const statusDot =
-    document.getElementById(
-        "status-dot"
-    );
-
+const startButton = document.getElementById("start-audio");
+const status = document.getElementById("status");
+const statusDot = document.getElementById("status-dot");
 
 const registerButtons =
-    document.querySelectorAll(
-        ".register"
-    );
+    document.querySelectorAll(".register");
 
 
 // ============================================================
 // ORGAN
 // ============================================================
 
-const organ =
-    new Organ();
+const organ = new Organ();
 
-
-let audioStarted =
-    false;
-
-
-let midiAccess =
-    null;
+let audioStarted = false;
+let midiAccess = null;
 
 
 // ============================================================
 // STATUS
 // ============================================================
 
-function setStatus(
-    text,
-    ready = false
-) {
+function setStatus(text, ready = false) {
 
-    status.textContent =
-        text;
+    if (status) {
+        status.textContent = text;
+    }
 
-
-    statusDot.classList.toggle(
-        "ready",
-        ready
-    );
+    if (statusDot) {
+        statusDot.classList.toggle(
+            "ready",
+            ready
+        );
+    }
 }
 
 
 // ============================================================
-// AKTUALIZACJA PRZYCISKÓW
+// AKTUALIZACJA REJESTRÓW
 // ============================================================
 
 function updateRegisters() {
 
-    registerButtons.forEach(
-        button => {
+    registerButtons.forEach(button => {
 
-            const name =
-                button.dataset.voice;
+        // WAŻNE:
+        // index.html używa data-register
+        const name =
+            button.dataset.register;
 
+        const sample =
+            organ.samples[name];
 
-            const sample =
-                organ.samples[name];
-
-
-            if (!sample) {
-
-                return;
-            }
-
-
-            const active =
-                sample.enabled;
-
-
-            button.classList.toggle(
-                "active",
-                active
-            );
-
-
-            button.setAttribute(
-                "aria-pressed",
-                String(active)
-            );
+        if (!sample) {
+            return;
         }
-    );
+
+        const active =
+            sample.enabled;
+
+        button.classList.toggle(
+            "active",
+            active
+        );
+
+        button.setAttribute(
+            "aria-pressed",
+            String(active)
+        );
+    });
 }
 
 
@@ -116,52 +86,53 @@ startButton.addEventListener(
     async () => {
 
         if (audioStarted) {
-
             return;
         }
 
-
         try {
 
-            startButton.disabled =
-                true;
-
+            startButton.disabled = true;
 
             setStatus(
                 "Ładowanie próbek..."
             );
 
 
+            // --------------------------------------------
+            // URUCHOM AUDIO
+            // --------------------------------------------
+
             await organ.start();
 
 
-            audioStarted =
-                true;
+            // --------------------------------------------
+            // TYLKO PIERWSZY REJESTR
+            // --------------------------------------------
+
+            Object.keys(
+                organ.samples
+            ).forEach(name => {
+
+                organ.samples[name].enabled =
+                    name === "geingenprincipal";
+            });
 
 
-            // =================================================
+            updateRegisters();
+
+
+            // --------------------------------------------
             // MIDI
-            // =================================================
+            // --------------------------------------------
 
             await initMIDI();
 
 
-            // =================================================
-            // PIERWSZY REJESTR
-            // =================================================
-
-            Object.keys(
-                organ.samples
-            ).forEach(
-                name => {
-
-                    organ.samples[name].enabled =
-                        name === "geingenprincipal";
-                }
-            );
+            audioStarted = true;
 
 
-            updateRegisters();
+            startButton.textContent =
+                "ORGANY URUCHOMIONE";
 
 
             setStatus(
@@ -170,26 +141,22 @@ startButton.addEventListener(
             );
 
 
-            startButton.textContent =
-                "ORGANY URUCHOMIONE";
-
-
         } catch (error) {
 
             console.error(
+                "BŁĄD STARTU ORGANÓW:",
                 error
             );
 
 
             setStatus(
-                "Nie udało się uruchomić organów."
+                "Błąd. Sprawdź konsolę przeglądarki."
             );
 
 
             startButton.disabled =
                 false;
         }
-
     }
 );
 
@@ -198,51 +165,64 @@ startButton.addEventListener(
 // REJESTRY
 // ============================================================
 
-registerButtons.forEach(
-    button => {
+registerButtons.forEach(button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+    button.addEventListener(
+        "click",
+        () => {
 
-                if (!audioStarted) {
+            if (!audioStarted) {
 
-                    setStatus(
-                        "Najpierw uruchom organy."
-                    );
+                setStatus(
+                    "Najpierw uruchom organy."
+                );
 
-                    return;
-                }
-
-
-                const name =
-                    button.dataset.voice;
+                return;
+            }
 
 
-                if (
-                    !organ.samples[name]
-                ) {
-
-                    console.error(
-                        "Nie znaleziono rejestru:",
-                        name
-                    );
-
-                    return;
-                }
+            // WAŻNE:
+            // data-register, NIE data-voice
+            const name =
+                button.dataset.register;
 
 
-                organ.toggleRegister(
+            if (!organ.samples[name]) {
+
+                console.error(
+                    "Nie znaleziono rejestru:",
                     name
                 );
 
-
-                updateRegisters();
-
+                return;
             }
-        );
-    }
-);
+
+
+            const enabled =
+                organ.toggleRegister(name);
+
+
+            button.classList.toggle(
+                "active",
+                enabled
+            );
+
+
+            button.setAttribute(
+                "aria-pressed",
+                String(enabled)
+            );
+
+
+            console.log(
+                organ.samples[name].name,
+                enabled
+                    ? "ON"
+                    : "OFF"
+            );
+        }
+    );
+});
 
 
 // ============================================================
@@ -251,12 +231,11 @@ registerButtons.forEach(
 
 async function initMIDI() {
 
-    if (
-        !navigator.requestMIDIAccess
-    ) {
+    if (!navigator.requestMIDIAccess) {
 
         setStatus(
-            "Audio działa, ale ta przeglądarka nie obsługuje Web MIDI."
+            "Organy działają, ale ta przeglądarka nie obsługuje Web MIDI.",
+            true
         );
 
         return;
@@ -282,13 +261,14 @@ async function initMIDI() {
     } catch (error) {
 
         console.error(
-            "MIDI:",
+            "MIDI ERROR:",
             error
         );
 
 
         setStatus(
-            "Audio działa, ale nie udało się uruchomić MIDI."
+            "Organy działają, ale nie udało się uruchomić MIDI.",
+            true
         );
     }
 }
@@ -301,7 +281,6 @@ async function initMIDI() {
 function connectMIDIInputs() {
 
     if (!midiAccess) {
-
         return;
     }
 
@@ -312,9 +291,7 @@ function connectMIDIInputs() {
         );
 
 
-    if (
-        inputs.length === 0
-    ) {
+    if (inputs.length === 0) {
 
         setStatus(
             "Organy gotowe — podłącz klawiaturę MIDI.",
@@ -325,18 +302,24 @@ function connectMIDIInputs() {
     }
 
 
-    inputs.forEach(
-        input => {
+    inputs.forEach(input => {
 
-            input.onmidimessage =
-                handleMIDIMessage;
-        }
-    );
+        input.onmidimessage =
+            handleMIDIMessage;
+    });
 
 
     setStatus(
         `Organy gotowe — MIDI: ${inputs.length} urządzenie.`,
         true
+    );
+
+
+    console.log(
+        "MIDI INPUTS:",
+        inputs.map(
+            input => input.name
+        )
     );
 }
 
@@ -345,16 +328,16 @@ function connectMIDIInputs() {
 // MIDI MESSAGE
 // ============================================================
 
-function handleMIDIMessage(
-    event
-) {
+function handleMIDIMessage(event) {
 
     const data =
         event.data;
 
 
-    if (!data || data.length < 2) {
-
+    if (
+        !data ||
+        data.length < 2
+    ) {
         return;
     }
 
@@ -412,7 +395,8 @@ function handleMIDIMessage(
 
 
     // ========================================================
-    // NOTE ON Z VELOCITY 0 = NOTE OFF
+    // NOTE ON + VELOCITY 0
+    // = NOTE OFF
     // ========================================================
 
     if (
@@ -423,7 +407,5 @@ function handleMIDIMessage(
         organ.noteOff(
             note
         );
-
-        return;
     }
 }
