@@ -7,104 +7,67 @@ export class Sampler {
 
         this.buffers =
             new Map();
+
+        this.loading =
+            new Map();
     }
 
 
-    async load(name, url) {
+    async load(url) {
 
-        console.log(
-            "Ładowanie próbki:",
-            name
-        );
-
-
-        const response =
-            await fetch(url);
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Nie można pobrać próbki: ${url}`
-            );
-
+        if (this.buffers.has(url)) {
+            return this.buffers.get(url);
         }
 
 
-        const data =
-            await response.arrayBuffer();
-
-
-        const buffer =
-            await this.audioContext
-                .decodeAudioData(data);
-
-
-        this.buffers.set(
-            name,
-            buffer
-        );
-
-
-        console.log(
-            "Załadowano:",
-            name
-        );
-
-
-        return buffer;
-    }
-
-
-    has(name) {
-
-        return this.buffers.has(name);
-
-    }
-
-
-    play(
-        name,
-        destination,
-        playbackRate = 1
-    ) {
-
-        const buffer =
-            this.buffers.get(name);
-
-
-        if (!buffer) {
-
-            console.warn(
-                "Brak próbki:",
-                name
-            );
-
-            return null;
+        if (this.loading.has(url)) {
+            return this.loading.get(url);
         }
 
 
-        const source =
-            this.audioContext
-                .createBufferSource();
+        const promise =
+            fetch(url)
+                .then(response => {
+
+                    if (!response.ok) {
+
+                        throw new Error(
+                            `${url}: HTTP ${response.status}`
+                        );
+                    }
+
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+
+                    return this.audioContext
+                        .decodeAudioData(data);
+                })
+                .then(buffer => {
+
+                    this.buffers.set(
+                        url,
+                        buffer
+                    );
+
+                    this.loading.delete(url);
+
+                    return buffer;
+                })
+                .catch(error => {
+
+                    this.loading.delete(url);
+
+                    throw error;
+                });
 
 
-        source.buffer =
-            buffer;
-
-
-        source.playbackRate.value =
-            playbackRate;
-
-
-        source.connect(
-            destination
+        this.loading.set(
+            url,
+            promise
         );
 
 
-        source.start();
-
-
-        return source;
+        return promise;
     }
 }
