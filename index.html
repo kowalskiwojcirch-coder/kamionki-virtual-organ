@@ -14,271 +14,164 @@
         body {
             margin: 0;
             min-height: 100vh;
-
             background:
-                radial-gradient(
-                    circle at top,
-                    #243447 0%,
-                    #10151b 45%,
-                    #080b0f 100%
-                );
-
+                radial-gradient(circle at top, #26313d 0%, #11171d 45%, #070a0d 100%);
             color: #eee;
-
-            font-family:
-                Inter,
-                system-ui,
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
-
+            font-family: Arial, Helvetica, sans-serif;
             display: flex;
             justify-content: center;
-            align-items: center;
-
-            padding: 30px;
+            padding: 30px 16px;
         }
 
         .organ {
             width: 100%;
-            max-width: 900px;
-
-            background: rgba(15, 19, 24, 0.94);
-
-            border: 1px solid rgba(255,255,255,0.08);
-
+            max-width: 1000px;
+            background: rgba(12, 16, 21, .97);
+            border: 1px solid rgba(255,255,255,.08);
             border-radius: 22px;
-
-            box-shadow:
-                0 30px 80px rgba(0,0,0,0.5),
-                inset 0 1px rgba(255,255,255,0.04);
-
             overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0,0,0,.55);
         }
 
         header {
-            padding: 30px 32px 25px;
-
-            border-bottom:
-                1px solid rgba(255,255,255,0.07);
+            padding: 30px;
+            border-bottom: 1px solid rgba(255,255,255,.07);
         }
 
-        .title {
+        h1 {
+            margin: 0;
             font-size: 30px;
-            font-weight: 700;
-            letter-spacing: 0.02em;
         }
 
         .subtitle {
-            margin-top: 6px;
-
-            color: #9da8b5;
-
-            font-size: 14px;
+            margin-top: 7px;
+            color: #8995a1;
         }
 
         .status {
             margin-top: 20px;
-
             display: flex;
             align-items: center;
             gap: 10px;
-
-            color: #9da8b5;
-
-            font-size: 13px;
+            color: #9ca7b2;
+            font-size: 14px;
         }
 
-        .status-dot {
+        .dot {
             width: 9px;
             height: 9px;
-
             border-radius: 50%;
-
-            background: #777;
-
-            box-shadow: 0 0 10px rgba(255,255,255,0.15);
+            background: #555;
         }
 
-        .status-dot.ready {
-            background: #70d69b;
-
-            box-shadow:
-                0 0 12px rgba(112,214,155,0.7);
+        .dot.ready {
+            background: #6ed39a;
+            box-shadow: 0 0 12px rgba(110,211,154,.7);
         }
 
-        .content {
-            padding: 28px 32px 32px;
+        main {
+            padding: 30px;
         }
 
         #start-audio {
             width: 100%;
-
-            padding: 16px 20px;
-
+            padding: 17px;
             border: 0;
             border-radius: 12px;
-
-            background: #e8c77a;
-
-            color: #17130a;
-
+            background: #dcb96b;
+            color: #151109;
             font-size: 15px;
-            font-weight: 800;
-
+            font-weight: bold;
             cursor: pointer;
-
-            transition:
-                transform 0.15s,
-                filter 0.15s;
         }
 
         #start-audio:hover {
             filter: brightness(1.08);
         }
 
-        #start-audio:active {
-            transform: scale(0.99);
-        }
-
         #start-audio:disabled {
+            opacity: .55;
             cursor: default;
-            opacity: 0.6;
         }
 
         .section-title {
-            margin-top: 30px;
-            margin-bottom: 14px;
-
-            color: #9da8b5;
-
+            margin: 30px 0 14px;
+            color: #8995a1;
             font-size: 12px;
-            font-weight: 700;
-
-            letter-spacing: 0.12em;
-
+            font-weight: bold;
+            letter-spacing: .12em;
             text-transform: uppercase;
         }
 
         #registers {
             display: grid;
-
-            grid-template-columns:
-                repeat(2, minmax(0, 1fr));
-
+            grid-template-columns: repeat(2, 1fr);
             gap: 12px;
         }
 
         .register {
-            position: relative;
-
-            min-height: 76px;
-
-            padding: 16px 18px;
-
-            display: grid;
-
-            grid-template-columns:
-                14px 1fr auto;
-
-            align-items: center;
-
-            gap: 12px;
-
-            text-align: left;
-
-            background: #171d24;
-
-            border:
-                1px solid rgba(255,255,255,0.07);
-
+            min-height: 78px;
+            padding: 15px 18px;
             border-radius: 13px;
-
-            color: #dfe4ea;
-
+            border: 1px solid rgba(255,255,255,.07);
+            background: #171d24;
+            color: #eee;
+            display: grid;
+            grid-template-columns: 10px 1fr auto;
+            align-items: center;
+            gap: 12px;
             cursor: pointer;
-
-            transition:
-                background 0.15s,
-                border 0.15s,
-                transform 0.15s;
+            text-align: left;
         }
 
         .register:hover {
-            background: #1c232c;
-        }
-
-        .register:active {
-            transform: scale(0.985);
+            background: #1e262f;
         }
 
         .register.active {
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(232,199,122,0.15),
-                    rgba(232,199,122,0.05)
-                );
-
-            border-color:
-                rgba(232,199,122,0.45);
+            background: linear-gradient(
+                135deg,
+                rgba(220,185,107,.18),
+                rgba(220,185,107,.04)
+            );
+            border-color: rgba(220,185,107,.45);
         }
 
         .lamp {
-            width: 10px;
-            height: 10px;
-
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
-
-            background: #343b43;
-
-            transition:
-                background 0.15s,
-                box-shadow 0.15s;
+            background: #353c44;
         }
 
         .register.active .lamp {
-            background: #e8c77a;
-
-            box-shadow:
-                0 0 12px rgba(232,199,122,0.8);
+            background: #e3c174;
+            box-shadow: 0 0 11px rgba(227,193,116,.8);
         }
 
-        .register strong {
-            font-size: 14px;
+        .register-name {
+            font-weight: bold;
         }
 
-        .register small {
-            color: #929daa;
-
-            font-size: 13px;
+        .register-foot {
+            color: #8c98a4;
         }
 
         .hint {
             margin-top: 18px;
-
-            color: #707b87;
-
+            color: #687480;
             font-size: 12px;
-
             line-height: 1.6;
         }
 
         @media (max-width: 650px) {
-
-            body {
-                padding: 12px;
+            #registers {
+                grid-template-columns: 1fr;
             }
 
             header,
-            .content {
-                padding-left: 20px;
-                padding-right: 20px;
-            }
-
-            #registers {
-                grid-template-columns: 1fr;
+            main {
+                padding: 22px;
             }
         }
     </style>
@@ -289,125 +182,96 @@
 <div class="organ">
 
     <header>
-
-        <div class="title">
-            Kamionki Virtual Organ
-        </div>
+        <h1>Kamionki Virtual Organ</h1>
 
         <div class="subtitle">
             Sample-based virtual organ
         </div>
 
         <div class="status">
-
-            <span
-                id="status-dot"
-                class="status-dot"
-            ></span>
-
-            <span id="status">
-                MIDI nie został uruchomiony.
-            </span>
-
+            <span id="status-dot" class="dot"></span>
+            <span id="status">Kliknij „Uruchom organy”.</span>
         </div>
-
     </header>
 
-
-    <div class="content">
+    <main>
 
         <button id="start-audio">
             URUCHOM ORGANY
         </button>
 
-
         <div class="section-title">
             Rejestry
         </div>
-
 
         <div id="registers">
 
             <button
                 class="register active"
-                data-voice="geingenprincipal"
+                data-register="geingenprincipal"
                 aria-pressed="true"
             >
                 <span class="lamp"></span>
-
-                <strong>
-                    Geigenprincipal
-                </strong>
-
-                <small>
+                <span class="register-name">
+                    GEIGENPRINCIPAL
+                </span>
+                <span class="register-foot">
                     8′
-                </small>
+                </span>
             </button>
-
 
             <button
                 class="register"
-                data-voice="sacional"
+                data-register="sacional"
                 aria-pressed="false"
             >
                 <span class="lamp"></span>
-
-                <strong>
-                    Salicional
-                </strong>
-
-                <small>
+                <span class="register-name">
+                    SALICIONAL
+                </span>
+                <span class="register-foot">
                     8′
-                </small>
+                </span>
             </button>
-
 
             <button
                 class="register"
-                data-voice="gedact"
+                data-register="gedact"
                 aria-pressed="false"
             >
                 <span class="lamp"></span>
-
-                <strong>
-                    Gedackt
-                </strong>
-
-                <small>
+                <span class="register-name">
+                    GEDECKT
+                </span>
+                <span class="register-foot">
                     8′
-                </small>
+                </span>
             </button>
-
 
             <button
                 class="register"
-                data-voice="flute"
+                data-register="flute"
                 aria-pressed="false"
             >
                 <span class="lamp"></span>
-
-                <strong>
-                    Flaut Traverso
-                </strong>
-
-                <small>
+                <span class="register-name">
+                    FLAUT TRAVERSO
+                </span>
+                <span class="register-foot">
                     4′
-                </small>
+                </span>
             </button>
 
         </div>
-
 
         <div class="hint">
-            Po uruchomieniu aktywny jest tylko Geigenprincipal.
-            Kolejne rejestry możesz dołączać podczas gry.
-            MIDI powinno działać po uruchomieniu audio.
+            Po uruchomieniu aktywny jest tylko Geigenprincipal 8′.
+            Kolejne głosy możesz dodawać podczas gry.
         </div>
 
-    </div>
+    </main>
 
 </div>
-
 
 <script type="module" src="./src/main.js"></script>
 
