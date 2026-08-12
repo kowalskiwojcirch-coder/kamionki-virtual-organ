@@ -13,12 +13,12 @@ export class Organ {
         this.master =
             this.audioContext.createGain();
 
-        // Mniejszy poziom, żeby akordy nie przesterowywały.
-        this.master.gain.value = 0.16;
+        // Zostawiamy zapas na akordy i kilka rejestrów.
+        this.master.gain.value = 0.18;
 
 
         // =====================================================
-        // REVERB
+        // DELIKATNY REVERB
         // =====================================================
 
         this.directGain =
@@ -31,8 +31,8 @@ export class Organ {
             this.audioContext.createConvolver();
 
 
-        this.directGain.gain.value = 0.94;
-        this.reverbGain.gain.value = 0.06;
+        this.directGain.gain.value = 0.96;
+        this.reverbGain.gain.value = 0.04;
 
 
         this.master.connect(
@@ -42,7 +42,6 @@ export class Organ {
         this.master.connect(
             this.reverbGain
         );
-
 
         this.directGain.connect(
             this.audioContext.destination
@@ -56,15 +55,19 @@ export class Organ {
             this.audioContext.destination
         );
 
-
-        // Tworzymy faktyczny pogłos.
         this.reverb.buffer =
             this.createReverb();
 
 
         // =====================================================
-        // REJESTRY
+        // PRÓBKI
         // =====================================================
+        //
+        // Wszystkie przesłane przez Ciebie próbki są bazowane
+        // około C2 = 65.41 Hz.
+        //
+        // Dlatego NIE używamy już baseNote: 60.
+        //
 
         this.samples = {
 
@@ -77,13 +80,13 @@ export class Organ {
 
                 enabled: true,
 
-                volume: 0.58,
+                baseFrequency: 65.3566,
 
-                baseNote: 60,
+                volume: 0.52,
 
-                attack: 0.012,
+                attack: 0.015,
 
-                release: 0.16,
+                release: 0.18,
 
                 loopStart: 0.25,
 
@@ -100,13 +103,13 @@ export class Organ {
 
                 enabled: false,
 
-                volume: 0.42,
+                baseFrequency: 65.3566,
 
-                baseNote: 60,
+                volume: 0.40,
 
-                attack: 0.012,
+                attack: 0.015,
 
-                release: 0.17,
+                release: 0.18,
 
                 loopStart: 0.25,
 
@@ -123,13 +126,13 @@ export class Organ {
 
                 enabled: false,
 
-                volume: 0.42,
+                baseFrequency: 65.3566,
 
-                baseNote: 60,
+                volume: 0.40,
 
-                attack: 0.012,
+                attack: 0.015,
 
-                release: 0.17,
+                release: 0.18,
 
                 loopStart: 0.25,
 
@@ -146,13 +149,13 @@ export class Organ {
 
                 enabled: false,
 
-                volume: 0.36,
+                baseFrequency: 65.3566,
 
-                baseNote: 60,
+                volume: 0.34,
 
-                attack: 0.012,
+                attack: 0.015,
 
-                release: 0.17,
+                release: 0.18,
 
                 loopStart: 0.25,
 
@@ -177,7 +180,8 @@ export class Organ {
             new Map();
 
 
-        this.started = false;
+        this.started =
+            false;
     }
 
 
@@ -198,40 +202,46 @@ export class Organ {
         await this.loadAllSamples();
 
 
-        this.started = true;
+        this.started =
+            true;
     }
 
 
     // =========================================================
-    // ŁADOWANIE WSZYSTKICH PRÓBEK
+    // ŁADOWANIE
     // =========================================================
 
     async loadAllSamples() {
 
         const names =
-            Object.keys(this.samples);
+            Object.keys(
+                this.samples
+            );
 
 
         await Promise.all(
             names.map(
-                name => this.loadSample(name)
+                name =>
+                    this.loadSample(name)
             )
         );
     }
 
 
-    // =========================================================
-    // ŁADOWANIE JEDNEJ PRÓBKI
-    // =========================================================
-
     async loadSample(name) {
 
-        if (this.buffers[name]) {
+        if (
+            this.buffers[name]
+        ) {
+
             return this.buffers[name];
         }
 
 
-        if (this.loading[name]) {
+        if (
+            this.loading[name]
+        ) {
+
             return this.loading[name];
         }
 
@@ -245,7 +255,9 @@ export class Organ {
 
                 .then(response => {
 
-                    if (!response.ok) {
+                    if (
+                        !response.ok
+                    ) {
 
                         throw new Error(
                             `${sample.file}: HTTP ${response.status}`
@@ -270,7 +282,8 @@ export class Organ {
 
                     console.log(
                         `Załadowano ${sample.name}:`,
-                        buffer.duration.toFixed(2) + " s"
+                        buffer.duration.toFixed(2),
+                        "s"
                     );
 
 
@@ -288,7 +301,9 @@ export class Organ {
 
     toggleRegister(name) {
 
-        if (!this.samples[name]) {
+        if (
+            !this.samples[name]
+        ) {
 
             console.error(
                 "Brak rejestru:",
@@ -311,27 +326,29 @@ export class Organ {
     // NOTE ON
     // =========================================================
 
-    async noteOn(note, velocity = 127) {
+    async noteOn(
+        midiNote,
+        velocity = 127
+    ) {
 
-        note =
+        midiNote =
             Math.round(
-                Number(note)
+                Number(midiNote)
             );
 
 
         if (
-            !Number.isFinite(note) ||
-            note < 0 ||
-            note > 127
+            !Number.isFinite(midiNote) ||
+            midiNote < 0 ||
+            midiNote > 127
         ) {
 
             return;
         }
 
 
-        // Nie uruchamiaj tej samej nuty drugi raz.
         if (
-            this.activeNotes.has(note)
+            this.activeNotes.has(midiNote)
         ) {
 
             return;
@@ -346,14 +363,12 @@ export class Organ {
         }
 
 
-        const voices = [];
+        // Organy nie reagują tak mocno na velocity
+        // jak fortepian.
 
-
-        // Velocity wykorzystujemy tylko delikatnie.
-        // Organy nie powinny reagować jak fortepian.
-        const velocityLevel =
+        const velocityFactor =
             Math.max(
-                0.75,
+                0.82,
                 Math.min(
                     1,
                     Number(velocity) / 127
@@ -361,14 +376,23 @@ export class Organ {
             );
 
 
+        const voices = [];
+
+
         for (
-            const [name, sample]
+            const [
+                name,
+                sample
+            ]
             of Object.entries(
                 this.samples
             )
         ) {
 
-            if (!sample.enabled) {
+            if (
+                !sample.enabled
+            ) {
+
                 continue;
             }
 
@@ -376,26 +400,33 @@ export class Organ {
             try {
 
                 const buffer =
-                    await this.loadSample(name);
+                    await this.loadSample(
+                        name
+                    );
 
 
                 const voice =
                     this.createVoice(
                         name,
                         buffer,
-                        note,
-                        velocityLevel
+                        midiNote,
+                        velocityFactor
                     );
 
 
-                if (voice) {
-                    voices.push(voice);
+                if (
+                    voice
+                ) {
+
+                    voices.push(
+                        voice
+                    );
                 }
 
             } catch (error) {
 
                 console.error(
-                    `Nie można uruchomić ${name}:`,
+                    `Błąd głosu ${name}:`,
                     error
                 );
             }
@@ -403,11 +434,11 @@ export class Organ {
 
 
         if (
-            voices.length > 0
+            voices.length
         ) {
 
             this.activeNotes.set(
-                note,
+                midiNote,
                 voices
             );
         }
@@ -415,14 +446,14 @@ export class Organ {
 
 
     // =========================================================
-    // TWORZENIE GŁOSU
+    // VOICE
     // =========================================================
 
     createVoice(
         name,
         buffer,
         midiNote,
-        velocityLevel = 1
+        velocityFactor
     ) {
 
         const sample =
@@ -439,25 +470,30 @@ export class Organ {
 
 
         // =====================================================
-        // TRANSPONOWANIE
+        // PRAWDZIWE STROJENIE W Hz
         // =====================================================
+        //
+        // MIDI 69 = A4 = 440 Hz
+        //
 
-        const semitones =
-            midiNote -
-            sample.baseNote;
+        const targetFrequency =
+            440 *
+            Math.pow(
+                2,
+                (midiNote - 69) / 12
+            );
 
 
         const playbackRate =
-            Math.pow(
-                2,
-                semitones / 12
-            );
+            targetFrequency /
+            sample.baseFrequency;
 
 
         if (
             !Number.isFinite(
                 playbackRate
-            )
+            ) ||
+            playbackRate <= 0
         ) {
 
             return null;
@@ -481,12 +517,9 @@ export class Organ {
             playbackRate;
 
 
-        // Minimalne naturalne rozstrojenie.
-        // Bardzo małe, żeby akordy nie robiły się chaotyczne.
-        source.detune.value =
-            (
-                Math.random() - 0.5
-            ) * 0.25;
+        // UWAGA:
+        // Żadnego losowego detune.
+        // Instrument ma być najpierw czysto dostrojony.
 
 
         // =====================================================
@@ -498,7 +531,8 @@ export class Organ {
                 .createGain();
 
 
-        gain.gain.value = 0;
+        gain.gain.value =
+            0;
 
 
         source.connect(
@@ -531,8 +565,6 @@ export class Organ {
             );
 
 
-        // Bezpieczne granice.
-
         loopStart =
             Math.max(
                 0.02,
@@ -553,26 +585,16 @@ export class Organ {
             );
 
 
-        if (
-            loopEnd > loopStart
-        ) {
-
-            source.loop =
-                true;
+        source.loop =
+            true;
 
 
-            source.loopStart =
-                loopStart;
+        source.loopStart =
+            loopStart;
 
 
-            source.loopEnd =
-                loopEnd;
-
-        } else {
-
-            source.loop =
-                false;
-        }
+        source.loopEnd =
+            loopEnd;
 
 
         // =====================================================
@@ -583,9 +605,9 @@ export class Organ {
             this.audioContext.currentTime;
 
 
-        const targetVolume =
+        const targetGain =
             sample.volume *
-            velocityLevel;
+            velocityFactor;
 
 
         gain.gain.cancelScheduledValues(
@@ -600,7 +622,7 @@ export class Organ {
 
 
         gain.gain.linearRampToValueAtTime(
-            targetVolume,
+            targetGain,
             now + sample.attack
         );
 
@@ -624,7 +646,8 @@ export class Organ {
             release:
                 sample.release,
 
-            stopped: false
+            stopped:
+                false
         };
     }
 
@@ -633,21 +656,24 @@ export class Organ {
     // NOTE OFF
     // =========================================================
 
-    noteOff(note) {
+    noteOff(midiNote) {
 
-        note =
+        midiNote =
             Math.round(
-                Number(note)
+                Number(midiNote)
             );
 
 
         const voices =
             this.activeNotes.get(
-                note
+                midiNote
             );
 
 
-        if (!voices) {
+        if (
+            !voices
+        ) {
+
             return;
         }
 
@@ -712,7 +738,7 @@ export class Organ {
 
 
         this.activeNotes.delete(
-            note
+            midiNote
         );
     }
 
@@ -724,7 +750,7 @@ export class Organ {
     createReverb() {
 
         const seconds =
-            1.8;
+            1.6;
 
 
         const length =
@@ -776,7 +802,7 @@ export class Organ {
                         Math.random() * 2 - 1
                     ) *
                     envelope *
-                    0.08;
+                    0.07;
             }
         }
 
