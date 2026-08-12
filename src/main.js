@@ -1,37 +1,21 @@
 import { Organ } from "./organ.js";
 
-
-// ============================================================
-// UI
-// ============================================================
-
 const startButton =
-    document.getElementById(
-        "start-audio"
-    );
+    document.getElementById("start-audio");
 
 const status =
-    document.getElementById(
-        "status"
-    );
+    document.getElementById("status");
 
 const statusDot =
-    document.getElementById(
-        "status-dot"
-    );
+    document.getElementById("status-dot");
 
 const registerButtons =
-    document.querySelectorAll(
-        ".register"
-    );
+    document.querySelectorAll(".register");
 
-
-// ============================================================
-// ORGAN
-// ============================================================
 
 const organ =
     new Organ();
+
 
 let audioStarted =
     false;
@@ -129,17 +113,14 @@ startButton.addEventListener(
 
 
             setStatus(
-                "Ładowanie organów..."
+                "Ładowanie próbek..."
             );
 
 
             await organ.start();
 
 
-            /*
-             * Zawsze startujemy tylko
-             * z Geigenprincipal.
-             */
+            // Tylko jeden rejestr na początku
 
             Object.keys(
                 organ.samples
@@ -176,13 +157,12 @@ startButton.addEventListener(
         } catch (error) {
 
             console.error(
-                "BŁĄD STARTU:",
                 error
             );
 
 
             setStatus(
-                "Nie udało się uruchomić organów."
+                "Błąd uruchamiania organów."
             );
 
 
@@ -194,7 +174,7 @@ startButton.addEventListener(
 
 
 // ============================================================
-// PRZYCISKI REJESTRÓW
+// REJESTRY
 // ============================================================
 
 registerButtons.forEach(
@@ -223,11 +203,6 @@ registerButtons.forEach(
                 if (
                     !organ.samples[name]
                 ) {
-
-                    console.error(
-                        "Nie znaleziono rejestru:",
-                        name
-                    );
 
                     return;
                 }
@@ -276,7 +251,6 @@ async function initMIDI() {
         midiAccess.onstatechange =
             connectMIDIInputs;
 
-
     } catch (error) {
 
         console.error(
@@ -286,7 +260,7 @@ async function initMIDI() {
 
 
         setStatus(
-            "Audio działa, ale MIDI nie zostało podłączone.",
+            "Nie udało się uruchomić MIDI.",
             true
         );
     }
@@ -343,7 +317,7 @@ function connectMIDIInputs() {
 
 
 // ============================================================
-// MIDI MESSAGE
+// MIDI
 // ============================================================
 
 function handleMIDIMessage(
@@ -407,7 +381,7 @@ function handleMIDIMessage(
     }
 
 
-    // NOTE ON z velocity 0
+    // NOTE ON velocity 0 = NOTE OFF
 
     if (
         command === 0x90 &&
