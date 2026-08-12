@@ -13,45 +13,78 @@ export class Organ {
         this.master =
             this.audioContext.createGain();
 
-        // Zapas dla akordów i kilku rejestrów
-        this.master.gain.value = 0.16;
+        this.master.gain.value = 0.14;
 
 
         // =====================================================
-        // DELIKATNY POGŁOS
+        // DELIKATNY MASTER COMPRESSOR
+        // =====================================================
+
+        this.compressor =
+            this.audioContext.createDynamicsCompressor();
+
+        this.compressor.threshold.value = -18;
+        this.compressor.knee.value = 12;
+        this.compressor.ratio.value = 2;
+        this.compressor.attack.value = 0.008;
+        this.compressor.release.value = 0.18;
+
+
+        // =====================================================
+        // DIRECT
         // =====================================================
 
         this.directGain =
             this.audioContext.createGain();
 
+        this.directGain.gain.value = 0.965;
+
+
+        // =====================================================
+        // REVERB
+        // =====================================================
+
         this.reverbGain =
             this.audioContext.createGain();
+
+        this.reverbGain.gain.value = 0.035;
+
 
         this.reverb =
             this.audioContext.createConvolver();
 
-        this.directGain.gain.value = 0.965;
-        this.reverbGain.gain.value = 0.035;
+
+        // =====================================================
+        // ROUTING
+        // =====================================================
 
         this.master.connect(
+            this.compressor
+        );
+
+        this.compressor.connect(
             this.directGain
         );
 
-        this.master.connect(
+        this.compressor.connect(
             this.reverbGain
         );
+
 
         this.directGain.connect(
             this.audioContext.destination
         );
 
+
         this.reverbGain.connect(
             this.reverb
         );
 
+
         this.reverb.connect(
             this.audioContext.destination
         );
+
 
         this.reverb.buffer =
             this.createReverb();
@@ -60,14 +93,6 @@ export class Organ {
         // =====================================================
         // REJESTRY
         // =====================================================
-
-        /*
-         * baseFrequency:
-         *
-         * rzeczywista częstotliwość próbki bazowej.
-         *
-         * Próbki są około C2.
-         */
 
         this.samples = {
 
@@ -80,15 +105,16 @@ export class Organ {
 
                 enabled: true,
 
-                baseFrequency: 65.3566,
+                // C2
+                baseFrequency: 65.4064,
 
                 octave: 0,
 
                 volume: 0.48,
 
-                attack: 0.012,
+                attack: 0.010,
 
-                release: 0.20,
+                release: 0.22,
 
                 loopStart: 0.25,
 
@@ -105,15 +131,15 @@ export class Organ {
 
                 enabled: false,
 
-                baseFrequency: 65.3566,
+                baseFrequency: 65.4064,
 
                 octave: 0,
 
-                volume: 0.34,
+                volume: 0.33,
 
                 attack: 0.012,
 
-                release: 0.20,
+                release: 0.23,
 
                 loopStart: 0.25,
 
@@ -130,15 +156,15 @@ export class Organ {
 
                 enabled: false,
 
-                baseFrequency: 65.3566,
+                baseFrequency: 65.4064,
 
                 octave: 0,
 
-                volume: 0.34,
+                volume: 0.33,
 
-                attack: 0.012,
+                attack: 0.014,
 
-                release: 0.20,
+                release: 0.24,
 
                 loopStart: 0.25,
 
@@ -155,16 +181,13 @@ export class Organ {
 
                 enabled: false,
 
-                baseFrequency: 65.3566,
+                baseFrequency: 65.4064,
 
-                /*
-                 * 4′ = jedna oktawa wyżej
-                 */
                 octave: 1,
 
-                volume: 0.28,
+                volume: 0.26,
 
-                attack: 0.012,
+                attack: 0.010,
 
                 release: 0.20,
 
@@ -219,7 +242,7 @@ export class Organ {
 
 
     // =========================================================
-    // ŁADOWANIE WSZYSTKICH PRÓBEK
+    // LOAD ALL
     // =========================================================
 
     async loadAllSamples() {
@@ -240,7 +263,7 @@ export class Organ {
 
 
     // =========================================================
-    // ŁADOWANIE JEDNEJ PRÓBKI
+    // LOAD SAMPLE
     // =========================================================
 
     async loadSample(name) {
@@ -362,9 +385,6 @@ export class Organ {
         }
 
 
-        // Nie twórz drugiej nuty,
-        // jeśli MIDI wysłało przypadkowo powtórkę.
-
         if (
             this.activeNotes.has(midiNote)
         ) {
@@ -381,33 +401,34 @@ export class Organ {
         }
 
 
+        // =====================================================
+        // VELOCITY
+        // =====================================================
+
+        const velocityNormalized =
+            Math.max(
+                0,
+                Math.min(
+                    1,
+                    Number(velocity) / 127
+                )
+            );
+
+
         /*
-         * Organy nie powinny zachowywać się jak fortepian.
-         * Velocity ma tylko niewielki wpływ.
+         * Organy nie powinny reagować jak fortepian.
          */
 
-        const velocityValue =
-            Number(velocity) / 127;
-
-
         const velocityFactor =
-            0.90 +
-            (
-                Math.max(
-                    0,
-                    Math.min(
-                        1,
-                        velocityValue
-                    )
-                ) * 0.10
-            );
+            0.92 +
+            velocityNormalized * 0.08;
 
 
         const voices = [];
 
 
         // =====================================================
-        // WSZYSTKIE AKTYWNE REJESTRY
+        // AKTYWNE REJESTRY
         // =====================================================
 
         for (
@@ -457,7 +478,7 @@ export class Organ {
             } catch (error) {
 
                 console.error(
-                    `Błąd głosu ${name}:`,
+                    `Błąd ${sample.name}:`,
                     error
                 );
             }
@@ -501,20 +522,8 @@ export class Organ {
 
 
         // =====================================================
-        // NORMALNE STROJENIE MIDI
+        // CZĘSTOTLIWOŚĆ MIDI
         // =====================================================
-
-        /*
-         * MIDI:
-         *
-         * C1 = 24
-         * C2 = 36
-         * C3 = 48
-         * C4 = 60
-         * C5 = 72
-         *
-         * A4 = 440 Hz
-         */
 
         const midiFrequency =
             440 *
@@ -524,13 +533,11 @@ export class Organ {
             );
 
 
-        /*
-         * Rejestr 4′:
-         *
-         * jedna oktawa wyżej.
-         */
+        // =====================================================
+        // REJESTR
+        // =====================================================
 
-        const registerFrequency =
+        const targetFrequency =
             midiFrequency *
             Math.pow(
                 2,
@@ -538,20 +545,49 @@ export class Organ {
             );
 
 
-        const playbackRate =
-            registerFrequency /
+        // =====================================================
+        // PLAYBACK RATE
+        // =====================================================
+
+        let playbackRate =
+            targetFrequency /
             sample.baseFrequency;
 
 
         if (
             !Number.isFinite(
                 playbackRate
-            ) ||
-            playbackRate <= 0
+            )
         ) {
 
             return null;
         }
+
+
+        // =====================================================
+        // WAŻNE DLA BASU
+        // =====================================================
+
+        /*
+         * Przy bardzo niskich nutach jedna próbka C2
+         * jest rozciągana bardzo mocno.
+         *
+         * Nie zmieniamy jednak wysokości MIDI.
+         *
+         * Robimy tylko łagodniejsze zachowanie dynamiki
+         * oraz filtrację.
+         */
+
+        const isVeryLow =
+            midiNote <= 35;
+
+
+        const isLow =
+            midiNote <= 47;
+
+
+        const isHigh =
+            midiNote >= 84;
 
 
         // =====================================================
@@ -571,13 +607,51 @@ export class Organ {
             playbackRate;
 
 
-        /*
-         * WAŻNE:
-         *
-         * Nie ma tutaj żadnego randomowego detune.
-         *
-         * Wszystkie głosy mają być czyste.
-         */
+        // =====================================================
+        // FILTR
+        // =====================================================
+
+        const filter =
+            this.audioContext
+                .createBiquadFilter();
+
+
+        filter.type =
+            "lowpass";
+
+
+        if (isVeryLow) {
+
+            filter.frequency.value =
+                1700;
+
+            filter.Q.value =
+                0.45;
+
+        } else if (isLow) {
+
+            filter.frequency.value =
+                3200;
+
+            filter.Q.value =
+                0.35;
+
+        } else if (isHigh) {
+
+            filter.frequency.value =
+                12000;
+
+            filter.Q.value =
+                0.20;
+
+        } else {
+
+            filter.frequency.value =
+                9000;
+
+            filter.Q.value =
+                0.25;
+        }
 
 
         // =====================================================
@@ -593,9 +667,19 @@ export class Organ {
             0;
 
 
+        // =====================================================
+        // POŁĄCZENIE
+        // =====================================================
+
         source.connect(
+            filter
+        );
+
+
+        filter.connect(
             gain
         );
+
 
         gain.connect(
             this.master
@@ -614,16 +698,58 @@ export class Organ {
 
 
         // =====================================================
-        // ATAK
+        // DYNAMIKA BASU
+        // =====================================================
+
+        let level =
+            sample.volume;
+
+
+        if (isVeryLow) {
+
+            level *= 0.78;
+
+        } else if (isLow) {
+
+            level *= 0.88;
+        }
+
+
+        level *=
+            velocityFactor;
+
+
+        // =====================================================
+        // ATTACK
+        // =====================================================
+
+        let attack =
+            sample.attack;
+
+
+        /*
+         * Dół dostaje trochę spokojniejszy
+         * początek, żeby nie robił "buch".
+         */
+
+        if (isVeryLow) {
+
+            attack =
+                0.026;
+
+        } else if (isLow) {
+
+            attack =
+                0.018;
+        }
+
+
+        // =====================================================
+        // START
         // =====================================================
 
         const now =
             this.audioContext.currentTime;
-
-
-        const targetGain =
-            sample.volume *
-            velocityFactor;
 
 
         gain.gain.cancelScheduledValues(
@@ -637,22 +763,11 @@ export class Organ {
         );
 
 
-        /*
-         * Bardzo szybki, ale nie zerowy attack.
-         *
-         * Dzięki temu nuta zaczyna się od razu,
-         * ale nie robi cyfrowego "klik".
-         */
-
         gain.gain.linearRampToValueAtTime(
-            targetGain,
-            now + sample.attack
+            level,
+            now + attack
         );
 
-
-        // =====================================================
-        // START
-        // =====================================================
 
         source.start(
             now,
@@ -667,7 +782,11 @@ export class Organ {
             gain,
 
             release:
-                sample.release,
+                isVeryLow
+                    ? 0.30
+                    : isLow
+                        ? 0.26
+                        : sample.release,
 
             stopped:
                 false
@@ -690,7 +809,7 @@ export class Organ {
 
 
         if (
-            duration <= 0.3
+            duration < 0.5
         ) {
 
             source.loop =
@@ -699,11 +818,6 @@ export class Organ {
             return;
         }
 
-
-        /*
-         * Ograniczamy punkty loopa,
-         * żeby nigdy nie wyjść poza próbkę.
-         */
 
         let start =
             Number(
@@ -717,9 +831,14 @@ export class Organ {
             );
 
 
+        /*
+         * Nigdy nie pozwalamy loopowi dojść
+         * dokładnie do końca pliku.
+         */
+
         start =
             Math.max(
-                0.03,
+                0.05,
                 Math.min(
                     start,
                     duration - 0.20
@@ -729,21 +848,24 @@ export class Organ {
 
         end =
             Math.max(
-                start + 0.10,
+                start + 0.15,
                 Math.min(
                     end,
-                    duration - 0.03
+                    duration - 0.05
                 )
             );
 
 
-        /*
-         * Standardowy loop Web Audio.
-         *
-         * Najważniejsze:
-         * nie zaczynamy od absolutnego początku przy każdym
-         * cyklu i nie robimy ekstremalnie krótkiego loopa.
-         */
+        if (
+            end <= start
+        ) {
+
+            source.loop =
+                false;
+
+            return;
+        }
+
 
         source.loop =
             true;
@@ -836,7 +958,7 @@ export class Organ {
                 voice.source.stop(
                     now +
                     voice.release +
-                    0.05
+                    0.06
                 );
 
             } catch (_) {}
@@ -856,7 +978,7 @@ export class Organ {
     createReverb() {
 
         const seconds =
-            1.8;
+            1.7;
 
 
         const length =
@@ -899,7 +1021,7 @@ export class Organ {
                 const envelope =
                     Math.pow(
                         1 - position,
-                        4.5
+                        4.2
                     );
 
 
@@ -908,7 +1030,7 @@ export class Organ {
                         Math.random() * 2 - 1
                     ) *
                     envelope *
-                    0.045;
+                    0.040;
             }
         }
 
