@@ -1,16 +1,34 @@
 import { Organ } from "./organ.js";
 
+
+// ============================================================
+// UI
+// ============================================================
+
 const startButton =
-    document.getElementById("start-audio");
+    document.getElementById(
+        "start-audio"
+    );
 
 const status =
-    document.getElementById("status");
+    document.getElementById(
+        "status"
+    );
 
 const statusDot =
-    document.getElementById("status-dot");
+    document.getElementById(
+        "status-dot"
+    );
 
 const registerButtons =
-    document.querySelectorAll(".register");
+    document.querySelectorAll(
+        ".register"
+    );
+
+
+// ============================================================
+// ORGAN
+// ============================================================
 
 const organ =
     new Organ();
@@ -32,10 +50,14 @@ function setStatus(
 ) {
 
     if (status) {
-        status.textContent = text;
+
+        status.textContent =
+            text;
     }
 
+
     if (statusDot) {
+
         statusDot.classList.toggle(
             "ready",
             ready
@@ -56,24 +78,28 @@ function updateRegisters() {
             const name =
                 button.dataset.register;
 
+
             const sample =
                 organ.samples[name];
 
+
             if (!sample) {
+
                 return;
             }
 
-            const active =
-                sample.enabled;
 
             button.classList.toggle(
                 "active",
-                active
+                sample.enabled
             );
+
 
             button.setAttribute(
                 "aria-pressed",
-                String(active)
+                String(
+                    sample.enabled
+                )
             );
         }
     );
@@ -88,24 +114,32 @@ startButton.addEventListener(
     "click",
     async () => {
 
-        if (audioStarted) {
+        if (
+            audioStarted
+        ) {
+
             return;
         }
+
 
         try {
 
             startButton.disabled =
                 true;
 
+
             setStatus(
-                "Ładowanie próbek..."
+                "Ładowanie organów..."
             );
 
 
             await organ.start();
 
 
-            // Tylko Geigenprincipal na starcie.
+            /*
+             * Zawsze startujemy tylko
+             * z Geigenprincipal.
+             */
 
             Object.keys(
                 organ.samples
@@ -113,7 +147,8 @@ startButton.addEventListener(
                 name => {
 
                     organ.samples[name].enabled =
-                        name === "geingenprincipal";
+                        name ===
+                        "geingenprincipal";
                 }
             );
 
@@ -133,20 +168,23 @@ startButton.addEventListener(
 
 
             setStatus(
-                "Organy gotowe — Geigenprincipal 8′.",
+                "Organy gotowe — Geigenprincipal 8′",
                 true
             );
+
 
         } catch (error) {
 
             console.error(
-                "START ERROR:",
+                "BŁĄD STARTU:",
                 error
             );
 
+
             setStatus(
-                "Błąd uruchamiania — sprawdź konsolę."
+                "Nie udało się uruchomić organów."
             );
+
 
             startButton.disabled =
                 false;
@@ -166,7 +204,9 @@ registerButtons.forEach(
             "click",
             () => {
 
-                if (!audioStarted) {
+                if (
+                    !audioStarted
+                ) {
 
                     setStatus(
                         "Najpierw uruchom organy."
@@ -185,7 +225,7 @@ registerButtons.forEach(
                 ) {
 
                     console.error(
-                        "Nie znaleziono:",
+                        "Nie znaleziono rejestru:",
                         name
                     );
 
@@ -193,22 +233,12 @@ registerButtons.forEach(
                 }
 
 
-                const enabled =
-                    organ.toggleRegister(
-                        name
-                    );
-
-
-                button.classList.toggle(
-                    "active",
-                    enabled
+                organ.toggleRegister(
+                    name
                 );
 
 
-                button.setAttribute(
-                    "aria-pressed",
-                    String(enabled)
-                );
+                updateRegisters();
             }
         );
     }
@@ -226,7 +256,7 @@ async function initMIDI() {
     ) {
 
         setStatus(
-            "Audio działa, ale przeglądarka nie obsługuje MIDI.",
+            "Audio działa, ale MIDI nie jest obsługiwane.",
             true
         );
 
@@ -246,15 +276,17 @@ async function initMIDI() {
         midiAccess.onstatechange =
             connectMIDIInputs;
 
+
     } catch (error) {
 
         console.error(
-            "MIDI ERROR:",
+            "MIDI:",
             error
         );
 
+
         setStatus(
-            "Nie udało się uruchomić MIDI.",
+            "Audio działa, ale MIDI nie zostało podłączone.",
             true
         );
     }
@@ -267,7 +299,10 @@ async function initMIDI() {
 
 function connectMIDIInputs() {
 
-    if (!midiAccess) {
+    if (
+        !midiAccess
+    ) {
+
         return;
     }
 
@@ -283,7 +318,7 @@ function connectMIDIInputs() {
     ) {
 
         setStatus(
-            "Organy gotowe — podłącz MIDI.",
+            "Organy gotowe — podłącz klawiaturę MIDI.",
             true
         );
 
@@ -301,7 +336,7 @@ function connectMIDIInputs() {
 
 
     setStatus(
-        `Organy gotowe — MIDI: ${inputs.length}.`,
+        `Organy gotowe — MIDI: ${inputs.length} urządzenie.`,
         true
     );
 }
@@ -311,7 +346,9 @@ function connectMIDIInputs() {
 // MIDI MESSAGE
 // ============================================================
 
-function handleMIDIMessage(event) {
+function handleMIDIMessage(
+    event
+) {
 
     const data =
         event.data;
@@ -370,7 +407,7 @@ function handleMIDIMessage(event) {
     }
 
 
-    // NOTE ON velocity 0 = NOTE OFF
+    // NOTE ON z velocity 0
 
     if (
         command === 0x90 &&
