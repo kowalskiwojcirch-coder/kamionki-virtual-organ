@@ -1,309 +1,90 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>Kamionki Virtual Organ</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background:
-                radial-gradient(circle at top, #293542 0%, #121820 45%, #070a0d 100%);
-            color: #eeeeee;
-            font-family: Arial, Helvetica, sans-serif;
-            padding: 30px 15px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            margin: auto;
-            background: rgba(12, 16, 21, 0.97);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 22px;
-            overflow: hidden;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.55);
-        }
-
-        header {
-            padding: 30px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        h1 {
-            margin: 0;
-            font-size: 30px;
-        }
-
-        .subtitle {
-            margin-top: 8px;
-            color: #8d99a5;
-        }
-
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-            color: #9da8b3;
-            font-size: 14px;
-        }
-
-        .status-dot {
-            width: 9px;
-            height: 9px;
-            border-radius: 50%;
-            background: #555;
-        }
-
-        .status-dot.ready {
-            background: #6ed39a;
-            box-shadow: 0 0 12px rgba(110,211,154,0.7);
-        }
-
-        main {
-            padding: 30px;
-        }
-
-        #start-audio {
-            width: 100%;
-            border: none;
-            border-radius: 12px;
-            padding: 17px;
-            background: #dcb96b;
-            color: #161109;
-            font-size: 15px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        #start-audio:hover {
-            filter: brightness(1.08);
-        }
-
-        #start-audio:disabled {
-            opacity: 0.6;
-            cursor: default;
-        }
-
-        .title {
-            margin: 30px 0 15px;
-            color: #8d99a5;
-            font-size: 12px;
-            font-weight: bold;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        #registers {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .register {
-            min-height: 75px;
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 13px;
-            background: #171d24;
-            color: white;
-            cursor: pointer;
-            display: grid;
-            grid-template-columns: 10px 1fr auto;
-            align-items: center;
-            gap: 12px;
-            padding: 15px 18px;
-            text-align: left;
-        }
-
-        .register:hover {
-            background: #202832;
-        }
-
-        .register.active {
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(220,185,107,0.18),
-                    rgba(220,185,107,0.04)
-                );
-            border-color: rgba(220,185,107,0.45);
-        }
-
-        .lamp {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #343b43;
-        }
-
-        .register.active .lamp {
-            background: #e3c174;
-            box-shadow: 0 0 12px rgba(227,193,116,0.8);
-        }
-
-        .register-name {
-            font-weight: bold;
-        }
-
-        .register-pitch {
-            color: #8995a0;
-        }
-
-        .info {
-            margin-top: 18px;
-            color: #687480;
-            font-size: 12px;
-            line-height: 1.6;
-        }
-
-        @media (max-width: 650px) {
-
-            #registers {
-                grid-template-columns: 1fr;
-            }
-
-            header,
-            main {
-                padding: 22px;
-            }
-        }
-    </style>
 </head>
+
 
 <body>
 
-<div class="container">
-
-    <header>
-
-        <h1>Kamionki Virtual Organ</h1>
-
-        <div class="subtitle">
-            Sample-based virtual organ
-        </div>
-
-        <div class="status">
-
-            <span
-                id="status-dot"
-                class="status-dot"
-            ></span>
-
-            <span id="status">
-                Kliknij „Uruchom organy”.
-            </span>
-
-        </div>
-
-    </header>
+    <h1>
+        Kamionki Virtual Organ
+    </h1>
 
 
-    <main>
+    <p id="status">
+        Kliknij przycisk, aby uruchomić organy.
+    </p>
 
-        <button id="start-audio">
-            URUCHOM ORGANY
+
+    <button id="start-audio">
+        URUCHOM ORGANY
+    </button>
+
+
+    <hr>
+
+
+    <h2>
+        Rejestry
+    </h2>
+
+
+    <div id="registers">
+
+        <button
+            class="register"
+            data-register="geingenprincipal"
+            aria-pressed="true"
+        >
+            GEIGENPRINCIPAL 8′
         </button>
 
 
-        <div class="title">
-            Rejestry
-        </div>
+        <button
+            class="register"
+            data-register="sacional"
+            aria-pressed="false"
+        >
+            SALICIONAL 8′
+        </button>
 
 
-        <div id="registers">
-
-            <button
-                class="register active"
-                data-register="geingenprincipal"
-                aria-pressed="true"
-            >
-                <span class="lamp"></span>
-
-                <span class="register-name">
-                    GEIGENPRINCIPAL
-                </span>
-
-                <span class="register-pitch">
-                    8′
-                </span>
-            </button>
+        <button
+            class="register"
+            data-register="gedact"
+            aria-pressed="false"
+        >
+            GEDECKT 8′
+        </button>
 
 
-            <button
-                class="register"
-                data-register="sacional"
-                aria-pressed="false"
-            >
-                <span class="lamp"></span>
+        <button
+            class="register"
+            data-register="flute"
+            aria-pressed="false"
+        >
+            FLAUT TRAVERSO 4′
+        </button>
 
-                <span class="register-name">
-                    SALICIONAL
-                </span>
-
-                <span class="register-pitch">
-                    8′
-                </span>
-            </button>
+    </div>
 
 
-            <button
-                class="register"
-                data-register="gedact"
-                aria-pressed="false"
-            >
-                <span class="lamp"></span>
-
-                <span class="register-name">
-                    GEDECKT
-                </span>
-
-                <span class="register-pitch">
-                    8′
-                </span>
-            </button>
-
-
-            <button
-                class="register"
-                data-register="flute"
-                aria-pressed="false"
-            >
-                <span class="lamp"></span>
-
-                <span class="register-name">
-                    FLAUT TRAVERSO
-                </span>
-
-                <span class="register-pitch">
-                    4′
-                </span>
-            </button>
-
-        </div>
-
-
-        <div class="info">
-            Po uruchomieniu aktywny jest tylko Geigenprincipal 8′.
-            Kolejne głosy możesz dodawać podczas gry.
-        </div>
-
-    </main>
-
-</div>
-
-
-<!-- WAŻNE:
-     organ.js ma małą literę "o".
--->
-<script type="module" src="./src/main.js"></script>
+    <script
+        type="module"
+        src="./src/main.js"
+    ></script>
 
 </body>
+
 </html>
