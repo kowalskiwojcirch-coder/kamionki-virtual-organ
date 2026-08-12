@@ -1,32 +1,35 @@
 import { Organ } from "./organ.js";
 
-// ============================================================
-// ELEMENTY UI
-// ============================================================
+const startButton =
+    document.getElementById("start-audio");
 
-const startButton = document.getElementById("start-audio");
-const status = document.getElementById("status");
-const statusDot = document.getElementById("status-dot");
+const status =
+    document.getElementById("status");
+
+const statusDot =
+    document.getElementById("status-dot");
 
 const registerButtons =
     document.querySelectorAll(".register");
 
+const organ =
+    new Organ();
 
-// ============================================================
-// ORGAN
-// ============================================================
+let audioStarted =
+    false;
 
-const organ = new Organ();
-
-let audioStarted = false;
-let midiAccess = null;
+let midiAccess =
+    null;
 
 
 // ============================================================
 // STATUS
 // ============================================================
 
-function setStatus(text, ready = false) {
+function setStatus(
+    text,
+    ready = false
+) {
 
     if (status) {
         status.textContent = text;
@@ -42,38 +45,38 @@ function setStatus(text, ready = false) {
 
 
 // ============================================================
-// AKTUALIZACJA REJESTRÓW
+// REJESTRY
 // ============================================================
 
 function updateRegisters() {
 
-    registerButtons.forEach(button => {
+    registerButtons.forEach(
+        button => {
 
-        // WAŻNE:
-        // index.html używa data-register
-        const name =
-            button.dataset.register;
+            const name =
+                button.dataset.register;
 
-        const sample =
-            organ.samples[name];
+            const sample =
+                organ.samples[name];
 
-        if (!sample) {
-            return;
+            if (!sample) {
+                return;
+            }
+
+            const active =
+                sample.enabled;
+
+            button.classList.toggle(
+                "active",
+                active
+            );
+
+            button.setAttribute(
+                "aria-pressed",
+                String(active)
+            );
         }
-
-        const active =
-            sample.enabled;
-
-        button.classList.toggle(
-            "active",
-            active
-        );
-
-        button.setAttribute(
-            "aria-pressed",
-            String(active)
-        );
-    });
+    );
 }
 
 
@@ -91,44 +94,38 @@ startButton.addEventListener(
 
         try {
 
-            startButton.disabled = true;
+            startButton.disabled =
+                true;
 
             setStatus(
                 "Ładowanie próbek..."
             );
 
 
-            // --------------------------------------------
-            // URUCHOM AUDIO
-            // --------------------------------------------
-
             await organ.start();
 
 
-            // --------------------------------------------
-            // TYLKO PIERWSZY REJESTR
-            // --------------------------------------------
+            // Tylko Geigenprincipal na starcie.
 
             Object.keys(
                 organ.samples
-            ).forEach(name => {
+            ).forEach(
+                name => {
 
-                organ.samples[name].enabled =
-                    name === "geingenprincipal";
-            });
+                    organ.samples[name].enabled =
+                        name === "geingenprincipal";
+                }
+            );
 
 
             updateRegisters();
 
 
-            // --------------------------------------------
-            // MIDI
-            // --------------------------------------------
-
             await initMIDI();
 
 
-            audioStarted = true;
+            audioStarted =
+                true;
 
 
             startButton.textContent =
@@ -136,23 +133,20 @@ startButton.addEventListener(
 
 
             setStatus(
-                "Organy gotowe — Geigenprincipal 8′ aktywny.",
+                "Organy gotowe — Geigenprincipal 8′.",
                 true
             );
-
 
         } catch (error) {
 
             console.error(
-                "BŁĄD STARTU ORGANÓW:",
+                "START ERROR:",
                 error
             );
 
-
             setStatus(
-                "Błąd. Sprawdź konsolę przeglądarki."
+                "Błąd uruchamiania — sprawdź konsolę."
             );
-
 
             startButton.disabled =
                 false;
@@ -162,67 +156,63 @@ startButton.addEventListener(
 
 
 // ============================================================
-// REJESTRY
+// PRZYCISKI REJESTRÓW
 // ============================================================
 
-registerButtons.forEach(button => {
+registerButtons.forEach(
+    button => {
 
-    button.addEventListener(
-        "click",
-        () => {
+        button.addEventListener(
+            "click",
+            () => {
 
-            if (!audioStarted) {
+                if (!audioStarted) {
 
-                setStatus(
-                    "Najpierw uruchom organy."
+                    setStatus(
+                        "Najpierw uruchom organy."
+                    );
+
+                    return;
+                }
+
+
+                const name =
+                    button.dataset.register;
+
+
+                if (
+                    !organ.samples[name]
+                ) {
+
+                    console.error(
+                        "Nie znaleziono:",
+                        name
+                    );
+
+                    return;
+                }
+
+
+                const enabled =
+                    organ.toggleRegister(
+                        name
+                    );
+
+
+                button.classList.toggle(
+                    "active",
+                    enabled
                 );
 
-                return;
-            }
 
-
-            // WAŻNE:
-            // data-register, NIE data-voice
-            const name =
-                button.dataset.register;
-
-
-            if (!organ.samples[name]) {
-
-                console.error(
-                    "Nie znaleziono rejestru:",
-                    name
+                button.setAttribute(
+                    "aria-pressed",
+                    String(enabled)
                 );
-
-                return;
             }
-
-
-            const enabled =
-                organ.toggleRegister(name);
-
-
-            button.classList.toggle(
-                "active",
-                enabled
-            );
-
-
-            button.setAttribute(
-                "aria-pressed",
-                String(enabled)
-            );
-
-
-            console.log(
-                organ.samples[name].name,
-                enabled
-                    ? "ON"
-                    : "OFF"
-            );
-        }
-    );
-});
+        );
+    }
+);
 
 
 // ============================================================
@@ -231,10 +221,12 @@ registerButtons.forEach(button => {
 
 async function initMIDI() {
 
-    if (!navigator.requestMIDIAccess) {
+    if (
+        !navigator.requestMIDIAccess
+    ) {
 
         setStatus(
-            "Organy działają, ale ta przeglądarka nie obsługuje Web MIDI.",
+            "Audio działa, ale przeglądarka nie obsługuje MIDI.",
             true
         );
 
@@ -252,11 +244,7 @@ async function initMIDI() {
 
 
         midiAccess.onstatechange =
-            () => {
-
-                connectMIDIInputs();
-            };
-
+            connectMIDIInputs;
 
     } catch (error) {
 
@@ -265,9 +253,8 @@ async function initMIDI() {
             error
         );
 
-
         setStatus(
-            "Organy działają, ale nie udało się uruchomić MIDI.",
+            "Nie udało się uruchomić MIDI.",
             true
         );
     }
@@ -275,7 +262,7 @@ async function initMIDI() {
 
 
 // ============================================================
-// PODŁĄCZANIE MIDI
+// MIDI INPUT
 // ============================================================
 
 function connectMIDIInputs() {
@@ -291,10 +278,12 @@ function connectMIDIInputs() {
         );
 
 
-    if (inputs.length === 0) {
+    if (
+        inputs.length === 0
+    ) {
 
         setStatus(
-            "Organy gotowe — podłącz klawiaturę MIDI.",
+            "Organy gotowe — podłącz MIDI.",
             true
         );
 
@@ -302,24 +291,18 @@ function connectMIDIInputs() {
     }
 
 
-    inputs.forEach(input => {
+    inputs.forEach(
+        input => {
 
-        input.onmidimessage =
-            handleMIDIMessage;
-    });
-
-
-    setStatus(
-        `Organy gotowe — MIDI: ${inputs.length} urządzenie.`,
-        true
+            input.onmidimessage =
+                handleMIDIMessage;
+        }
     );
 
 
-    console.log(
-        "MIDI INPUTS:",
-        inputs.map(
-            input => input.name
-        )
+    setStatus(
+        `Organy gotowe — MIDI: ${inputs.length}.`,
+        true
     );
 }
 
@@ -338,16 +321,13 @@ function handleMIDIMessage(event) {
         !data ||
         data.length < 2
     ) {
+
         return;
     }
 
 
-    const statusByte =
-        data[0];
-
-
     const command =
-        statusByte & 0xf0;
+        data[0] & 0xf0;
 
 
     const note =
@@ -355,14 +335,12 @@ function handleMIDIMessage(event) {
 
 
     const velocity =
-        data.length > 2
+        data.length >= 3
             ? data[2]
             : 0;
 
 
-    // ========================================================
     // NOTE ON
-    // ========================================================
 
     if (
         command === 0x90 &&
@@ -378,9 +356,7 @@ function handleMIDIMessage(event) {
     }
 
 
-    // ========================================================
     // NOTE OFF
-    // ========================================================
 
     if (
         command === 0x80
@@ -394,10 +370,7 @@ function handleMIDIMessage(event) {
     }
 
 
-    // ========================================================
-    // NOTE ON + VELOCITY 0
-    // = NOTE OFF
-    // ========================================================
+    // NOTE ON velocity 0 = NOTE OFF
 
     if (
         command === 0x90 &&
