@@ -13,12 +13,12 @@ export class Organ {
         this.master =
             this.audioContext.createGain();
 
-        // Zostawiamy zapas na akordy i kilka rejestrów.
-        this.master.gain.value = 0.18;
+        // Zapas dla akordów i kilku rejestrów
+        this.master.gain.value = 0.16;
 
 
         // =====================================================
-        // DELIKATNY REVERB
+        // DELIKATNY POGŁOS
         // =====================================================
 
         this.directGain =
@@ -30,10 +30,8 @@ export class Organ {
         this.reverb =
             this.audioContext.createConvolver();
 
-
-        this.directGain.gain.value = 0.96;
-        this.reverbGain.gain.value = 0.04;
-
+        this.directGain.gain.value = 0.965;
+        this.reverbGain.gain.value = 0.035;
 
         this.master.connect(
             this.directGain
@@ -60,14 +58,16 @@ export class Organ {
 
 
         // =====================================================
-        // PRÓBKI
+        // REJESTRY
         // =====================================================
-        //
-        // Wszystkie przesłane przez Ciebie próbki są bazowane
-        // około C2 = 65.41 Hz.
-        //
-        // Dlatego NIE używamy już baseNote: 60.
-        //
+
+        /*
+         * baseFrequency:
+         *
+         * rzeczywista częstotliwość próbki bazowej.
+         *
+         * Próbki są około C2.
+         */
 
         this.samples = {
 
@@ -82,11 +82,13 @@ export class Organ {
 
                 baseFrequency: 65.3566,
 
-                volume: 0.52,
+                octave: 0,
 
-                attack: 0.015,
+                volume: 0.48,
 
-                release: 0.18,
+                attack: 0.012,
+
+                release: 0.20,
 
                 loopStart: 0.25,
 
@@ -105,11 +107,13 @@ export class Organ {
 
                 baseFrequency: 65.3566,
 
-                volume: 0.40,
+                octave: 0,
 
-                attack: 0.015,
+                volume: 0.34,
 
-                release: 0.18,
+                attack: 0.012,
+
+                release: 0.20,
 
                 loopStart: 0.25,
 
@@ -128,11 +132,13 @@ export class Organ {
 
                 baseFrequency: 65.3566,
 
-                volume: 0.40,
+                octave: 0,
 
-                attack: 0.015,
+                volume: 0.34,
 
-                release: 0.18,
+                attack: 0.012,
+
+                release: 0.20,
 
                 loopStart: 0.25,
 
@@ -151,11 +157,16 @@ export class Organ {
 
                 baseFrequency: 65.3566,
 
-                volume: 0.34,
+                /*
+                 * 4′ = jedna oktawa wyżej
+                 */
+                octave: 1,
 
-                attack: 0.015,
+                volume: 0.28,
 
-                release: 0.18,
+                attack: 0.012,
+
+                release: 0.20,
 
                 loopStart: 0.25,
 
@@ -208,7 +219,7 @@ export class Organ {
 
 
     // =========================================================
-    // ŁADOWANIE
+    // ŁADOWANIE WSZYSTKICH PRÓBEK
     // =========================================================
 
     async loadAllSamples() {
@@ -227,6 +238,10 @@ export class Organ {
         );
     }
 
+
+    // =========================================================
+    // ŁADOWANIE JEDNEJ PRÓBKI
+    // =========================================================
 
     async loadSample(name) {
 
@@ -347,6 +362,9 @@ export class Organ {
         }
 
 
+        // Nie twórz drugiej nuty,
+        // jeśli MIDI wysłało przypadkowo powtórkę.
+
         if (
             this.activeNotes.has(midiNote)
         ) {
@@ -363,21 +381,34 @@ export class Organ {
         }
 
 
-        // Organy nie reagują tak mocno na velocity
-        // jak fortepian.
+        /*
+         * Organy nie powinny zachowywać się jak fortepian.
+         * Velocity ma tylko niewielki wpływ.
+         */
+
+        const velocityValue =
+            Number(velocity) / 127;
+
 
         const velocityFactor =
-            Math.max(
-                0.82,
-                Math.min(
-                    1,
-                    Number(velocity) / 127
-                )
+            0.90 +
+            (
+                Math.max(
+                    0,
+                    Math.min(
+                        1,
+                        velocityValue
+                    )
+                ) * 0.10
             );
 
 
         const voices = [];
 
+
+        // =====================================================
+        // WSZYSTKIE AKTYWNE REJESTRY
+        // =====================================================
 
         for (
             const [
@@ -446,7 +477,7 @@ export class Organ {
 
 
     // =========================================================
-    // VOICE
+    // TWORZENIE GŁOSU
     // =========================================================
 
     createVoice(
@@ -470,13 +501,22 @@ export class Organ {
 
 
         // =====================================================
-        // PRAWDZIWE STROJENIE W Hz
+        // NORMALNE STROJENIE MIDI
         // =====================================================
-        //
-        // MIDI 69 = A4 = 440 Hz
-        //
 
-        const targetFrequency =
+        /*
+         * MIDI:
+         *
+         * C1 = 24
+         * C2 = 36
+         * C3 = 48
+         * C4 = 60
+         * C5 = 72
+         *
+         * A4 = 440 Hz
+         */
+
+        const midiFrequency =
             440 *
             Math.pow(
                 2,
@@ -484,8 +524,22 @@ export class Organ {
             );
 
 
+        /*
+         * Rejestr 4′:
+         *
+         * jedna oktawa wyżej.
+         */
+
+        const registerFrequency =
+            midiFrequency *
+            Math.pow(
+                2,
+                sample.octave
+            );
+
+
         const playbackRate =
-            targetFrequency /
+            registerFrequency /
             sample.baseFrequency;
 
 
@@ -517,9 +571,13 @@ export class Organ {
             playbackRate;
 
 
-        // UWAGA:
-        // Żadnego losowego detune.
-        // Instrument ma być najpierw czysto dostrojony.
+        /*
+         * WAŻNE:
+         *
+         * Nie ma tutaj żadnego randomowego detune.
+         *
+         * Wszystkie głosy mają być czyste.
+         */
 
 
         // =====================================================
@@ -539,7 +597,6 @@ export class Organ {
             gain
         );
 
-
         gain.connect(
             this.master
         );
@@ -549,52 +606,11 @@ export class Organ {
         // LOOP
         // =====================================================
 
-        const duration =
-            buffer.duration;
-
-
-        let loopStart =
-            Number(
-                sample.loopStart
-            );
-
-
-        let loopEnd =
-            Number(
-                sample.loopEnd
-            );
-
-
-        loopStart =
-            Math.max(
-                0.02,
-                Math.min(
-                    loopStart,
-                    duration - 0.10
-                )
-            );
-
-
-        loopEnd =
-            Math.max(
-                loopStart + 0.05,
-                Math.min(
-                    loopEnd,
-                    duration - 0.02
-                )
-            );
-
-
-        source.loop =
-            true;
-
-
-        source.loopStart =
-            loopStart;
-
-
-        source.loopEnd =
-            loopEnd;
+        this.setupLoop(
+            source,
+            buffer,
+            sample
+        );
 
 
         // =====================================================
@@ -620,6 +636,13 @@ export class Organ {
             now
         );
 
+
+        /*
+         * Bardzo szybki, ale nie zerowy attack.
+         *
+         * Dzięki temu nuta zaczyna się od razu,
+         * ale nie robi cyfrowego "klik".
+         */
 
         gain.gain.linearRampToValueAtTime(
             targetGain,
@@ -649,6 +672,89 @@ export class Organ {
             stopped:
                 false
         };
+    }
+
+
+    // =========================================================
+    // LOOP
+    // =========================================================
+
+    setupLoop(
+        source,
+        buffer,
+        sample
+    ) {
+
+        const duration =
+            buffer.duration;
+
+
+        if (
+            duration <= 0.3
+        ) {
+
+            source.loop =
+                false;
+
+            return;
+        }
+
+
+        /*
+         * Ograniczamy punkty loopa,
+         * żeby nigdy nie wyjść poza próbkę.
+         */
+
+        let start =
+            Number(
+                sample.loopStart
+            );
+
+
+        let end =
+            Number(
+                sample.loopEnd
+            );
+
+
+        start =
+            Math.max(
+                0.03,
+                Math.min(
+                    start,
+                    duration - 0.20
+                )
+            );
+
+
+        end =
+            Math.max(
+                start + 0.10,
+                Math.min(
+                    end,
+                    duration - 0.03
+                )
+            );
+
+
+        /*
+         * Standardowy loop Web Audio.
+         *
+         * Najważniejsze:
+         * nie zaczynamy od absolutnego początku przy każdym
+         * cyklu i nie robimy ekstremalnie krótkiego loopa.
+         */
+
+        source.loop =
+            true;
+
+
+        source.loopStart =
+            start;
+
+
+        source.loopEnd =
+            end;
     }
 
 
@@ -750,7 +856,7 @@ export class Organ {
     createReverb() {
 
         const seconds =
-            1.6;
+            1.8;
 
 
         const length =
@@ -793,7 +899,7 @@ export class Organ {
                 const envelope =
                     Math.pow(
                         1 - position,
-                        4
+                        4.5
                     );
 
 
@@ -802,7 +908,7 @@ export class Organ {
                         Math.random() * 2 - 1
                     ) *
                     envelope *
-                    0.07;
+                    0.045;
             }
         }
 
