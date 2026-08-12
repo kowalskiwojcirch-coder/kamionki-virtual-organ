@@ -12,72 +12,361 @@
 
     <title>Kamionki Virtual Organ</title>
 
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+
+            margin: 0;
+
+            min-height: 100vh;
+
+            font-family:
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background:
+                radial-gradient(
+                    circle at top,
+                    #242424,
+                    #101010 65%
+                );
+
+            color: #f4f4f4;
+
+            display: flex;
+
+            justify-content: center;
+
+            padding: 40px 20px;
+        }
+
+
+        .organ {
+
+            width: min(
+                900px,
+                100%
+            );
+
+            background:
+                rgba(
+                    25,
+                    25,
+                    25,
+                    0.94
+                );
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.10
+                );
+
+            border-radius: 22px;
+
+            padding: 32px;
+
+            box-shadow:
+                0 25px 80px
+                rgba(
+                    0,
+                    0,
+                    0,
+                    0.45
+                );
+        }
+
+
+        h1 {
+
+            margin-top: 0;
+
+            letter-spacing: 1px;
+
+            font-weight: 600;
+        }
+
+
+        #status {
+
+            color: #bdbdbd;
+
+            min-height: 24px;
+        }
+
+
+        .status-line {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 10px;
+        }
+
+
+        #status-dot {
+
+            width: 10px;
+
+            height: 10px;
+
+            border-radius: 50%;
+
+            background: #555;
+
+            transition:
+                0.2s;
+        }
+
+
+        #status-dot.ready {
+
+            background: #55c878;
+
+            box-shadow:
+                0 0 12px
+                rgba(
+                    85,
+                    200,
+                    120,
+                    0.7
+                );
+        }
+
+
+        #start-audio {
+
+            width: 100%;
+
+            border: 0;
+
+            border-radius: 14px;
+
+            padding: 16px;
+
+            margin-top: 12px;
+
+            font-size: 16px;
+
+            font-weight: 700;
+
+            cursor: pointer;
+
+            background: #e7e7e7;
+
+            color: #111;
+
+            transition:
+                transform 0.15s,
+                opacity 0.15s;
+        }
+
+
+        #start-audio:hover {
+
+            transform:
+                translateY(-1px);
+        }
+
+
+        #start-audio:disabled {
+
+            opacity: 0.55;
+
+            cursor: default;
+        }
+
+
+        hr {
+
+            border: 0;
+
+            border-top:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.10
+                );
+
+            margin:
+                30px 0;
+        }
+
+
+        h2 {
+
+            font-size: 18px;
+
+            margin-bottom: 16px;
+        }
+
+
+        #registers {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    auto-fit,
+                    minmax(
+                        190px,
+                        1fr
+                    )
+                );
+
+            gap: 12px;
+        }
+
+
+        .register {
+
+            border:
+                1px solid
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.12
+                );
+
+            background: #1d1d1d;
+
+            color: #ddd;
+
+            border-radius: 12px;
+
+            padding: 16px 12px;
+
+            cursor: pointer;
+
+            font-weight: 600;
+
+            transition:
+                background 0.15s,
+                border 0.15s,
+                transform 0.15s;
+        }
+
+
+        .register:hover {
+
+            transform:
+                translateY(-1px);
+
+            background: #262626;
+        }
+
+
+        .register.active {
+
+            background: #e8e8e8;
+
+            color: #111;
+
+            border-color:
+                #fff;
+
+            box-shadow:
+                0 5px 25px
+                rgba(
+                    255,
+                    255,
+                    255,
+                    0.10
+                );
+        }
+
+    </style>
+
 </head>
 
 
 <body>
 
-    <h1>
-        Kamionki Virtual Organ
-    </h1>
+    <main class="organ">
+
+        <h1>
+            Kamionki Virtual Organ
+        </h1>
 
 
-    <p id="status">
-        Kliknij przycisk, aby uruchomić organy.
-    </p>
+        <div class="status-line">
+
+            <span id="status-dot"></span>
+
+            <p id="status">
+                Kliknij przycisk, aby uruchomić organy.
+            </p>
+
+        </div>
 
 
-    <button id="start-audio">
-        URUCHOM ORGANY
-    </button>
-
-
-    <hr>
-
-
-    <h2>
-        Rejestry
-    </h2>
-
-
-    <div id="registers">
-
-        <button
-            class="register"
-            data-register="geingenprincipal"
-            aria-pressed="true"
-        >
-            GEIGENPRINCIPAL 8′
+        <button id="start-audio">
+            URUCHOM ORGANY
         </button>
 
 
-        <button
-            class="register"
-            data-register="sacional"
-            aria-pressed="false"
-        >
-            SALICIONAL 8′
-        </button>
+        <hr>
 
 
-        <button
-            class="register"
-            data-register="gedact"
-            aria-pressed="false"
-        >
-            GEDECKT 8′
-        </button>
+        <h2>
+            Rejestry
+        </h2>
 
 
-        <button
-            class="register"
-            data-register="flute"
-            aria-pressed="false"
-        >
-            FLAUT TRAVERSO 4′
-        </button>
+        <div id="registers">
 
-    </div>
+            <button
+                class="register active"
+                data-register="geingenprincipal"
+                aria-pressed="true"
+            >
+                GEIGENPRINCIPAL 8′
+            </button>
+
+
+            <button
+                class="register"
+                data-register="sacional"
+                aria-pressed="false"
+            >
+                SALICIONAL 8′
+            </button>
+
+
+            <button
+                class="register"
+                data-register="gedact"
+                aria-pressed="false"
+            >
+                GEDECKT 8′
+            </button>
+
+
+            <button
+                class="register"
+                data-register="flute"
+                aria-pressed="false"
+            >
+                FLAUT TRAVERSO 4′
+            </button>
+
+        </div>
+
+    </main>
 
 
     <script
